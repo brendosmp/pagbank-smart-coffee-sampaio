@@ -3,11 +3,15 @@ package br.com.uol.pagbank.plugpagservice.demo
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityMainBinding
+import br.com.uol.pagbank.plugpagservice.demo.pagamento.EstadoPagamento
 import br.com.uol.pagbank.plugpagservice.demo.terminal.IdentificadorTerminal
+import br.com.uol.pagbank.plugpagservice.demo.ui.pagamento.PagamentoActivity
 import br.com.uol.pagbank.plugpagservice.demo.ui.terminal.InformacoesTerminalActivity
 
 class MainActivity : AppCompatActivity() {
