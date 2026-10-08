@@ -5,6 +5,8 @@ import androidx.lifecycle.MutableLiveData
 
 data class DadosEstadoPagamento(
     val valorCentavos: Int = 0,
+    val parcelamento: TipoParcelamento = TipoParcelamento.A_VISTA,
+    val parcelas: Int = 1,
     val mensagem: String = "Realize o pagamento",
     val finalizado: Boolean = false,
     val aprovado: Boolean? = null
@@ -17,10 +19,12 @@ object EstadoPagamento {
     val estado: LiveData<DadosEstadoPagamento>
         get() = _estado
 
-    fun iniciar(valorCentavos: Int) {
+    fun iniciar(requisicao: RequisicaoPagamento) {
         _estado.postValue(
             DadosEstadoPagamento(
-                valorCentavos = valorCentavos,
+                valorCentavos = requisicao.valorCentavos,
+                parcelamento = requisicao.parcelamento,
+                parcelas = requisicao.parcelas,
                 mensagem = "Realize o pagamento",
                 finalizado = false,
                 aprovado = null

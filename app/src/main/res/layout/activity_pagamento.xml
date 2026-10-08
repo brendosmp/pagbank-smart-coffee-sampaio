@@ -17,11 +17,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <View
-            android:id="@+id/bolinhaPagamento"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:background="@drawable/bg_bolinha_pagamento" />
+        <FrameLayout
+            android:layout_width="110dp"
+            android:layout_height="110dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <View
+                android:id="@+id/bolinhaPagamento"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_bolinha_pagamento" />
+
+        </FrameLayout>
 
         <TextView
             android:id="@+id/txtTitulo"
@@ -43,6 +52,15 @@
             android:textColor="@color/azul_topbar"
             android:textSize="30sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtParcelamento"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/cinza_texto"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/txtMensagem"

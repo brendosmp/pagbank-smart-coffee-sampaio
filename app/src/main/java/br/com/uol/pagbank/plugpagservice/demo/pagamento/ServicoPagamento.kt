@@ -2,6 +2,7 @@ package br.com.uol.pagbank.plugpagservice.demo.pagamento
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import br.com.uol.pagbank.plugpagservice.demo.ui.pagamento.PagamentoActivity
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventData
@@ -19,7 +20,7 @@ class ServicoPagamento(
     fun executar(requisicao: RequisicaoPagamento): RespostaPagamento {
         validar(requisicao)
 
-        EstadoPagamento.iniciar(requisicao.valorCentavos)
+        EstadoPagamento.iniciar(requisicao)
         abrirTelaPagamento()
 
         configurarEventos()
@@ -35,7 +36,14 @@ class ServicoPagamento(
             isCarne = false
         )
 
+        Log.i("PlugPag", "Iniciando pagamento")
+
         val resultado = plugPag.doPayment(pagamento)
+
+        Log.i(
+            "PlugPag",
+            "Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
+        )
 
         val aprovado = resultado.result == PlugPag.RET_OK
 
@@ -54,10 +62,13 @@ class ServicoPagamento(
         plugPag.setEventListener(object : PlugPagEventListener {
 
             override fun onEvent(data: PlugPagEventData) {
-                val mensagem = data.customMessage
+                Log.i(
+                    "PlugPag",
+                    "Evento=${data.eventCode} Mensagem=${data.customMessage}"
+                )
 
-                if (mensagem.isNotBlank())
-                    EstadoPagamento.atualizarMensagem(mensagem)
+                if (data.customMessage.isNotBlank())
+                    EstadoPagamento.atualizarMensagem(data.customMessage)
             }
         })
     }
@@ -86,6 +97,7 @@ class ServicoPagamento(
         return when (tipo) {
             TipoPagamento.CREDITO -> PlugPag.TYPE_CREDITO
             TipoPagamento.DEBITO -> PlugPag.TYPE_DEBITO
+            TipoPagamento.PIX -> PlugPag.TYPE_PIX
         }
     }
 

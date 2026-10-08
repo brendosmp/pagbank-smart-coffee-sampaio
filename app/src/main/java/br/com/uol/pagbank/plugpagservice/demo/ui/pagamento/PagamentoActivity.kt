@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityPagamentoBinding
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.EstadoPagamento
+import br.com.uol.pagbank.plugpagservice.demo.pagamento.TipoParcelamento
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -26,6 +27,8 @@ class PagamentoActivity : AppCompatActivity() {
         EstadoPagamento.estado.observe(this) { estado ->
             atualizarTela(
                 estado.valorCentavos,
+                estado.parcelamento,
+                estado.parcelas,
                 estado.mensagem,
                 estado.finalizado,
                 estado.aprovado
@@ -36,11 +39,14 @@ class PagamentoActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun atualizarTela(
         valorCentavos: Int,
+        parcelamento: TipoParcelamento,
+        parcelas: Int,
         mensagem: String,
         finalizado: Boolean,
         aprovado: Boolean?
     ) {
         binding.txtValor.text = formatarValor(valorCentavos)
+        binding.txtParcelamento.text = formatarParcelamento(parcelamento, parcelas)
         binding.txtMensagem.text = mensagem
 
         if (!finalizado) {
@@ -117,5 +123,19 @@ class PagamentoActivity : AppCompatActivity() {
     override fun onDestroy() {
         pararAnimacao()
         super.onDestroy()
+    }
+
+    private fun formatarParcelamento(
+        parcelamento: TipoParcelamento,
+        parcelas: Int
+    ): String {
+        if (parcelamento == TipoParcelamento.A_VISTA || parcelas <= 1)
+            return "À vista"
+
+        return when (parcelamento) {
+            TipoParcelamento.A_VISTA -> "À vista"
+            TipoParcelamento.PARC_VENDEDOR -> "${parcelas}x • Parcelado vendedor"
+            TipoParcelamento.PARC_COMPRADOR -> "${parcelas}x • Parcelado comprador"
+        }
     }
 }
