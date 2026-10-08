@@ -41,6 +41,11 @@
             android:label="Pagamento" />
 
         <activity
+            android:name=".ui.estorno.EstornoActivity"
+            android:exported="false"
+            android:label="Estorno" />
+
+        <activity
             android:name=".ui.terminal.InformacoesTerminalActivity"
             android:exported="false"
             android:label="Informações do terminal" />

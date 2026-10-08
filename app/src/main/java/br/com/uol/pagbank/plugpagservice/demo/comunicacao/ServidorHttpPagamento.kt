@@ -2,6 +2,8 @@ package br.com.uol.pagbank.plugpagservice.demo.comunicacao
 
 import android.content.Context
 import android.util.Log
+import br.com.uol.pagbank.plugpagservice.demo.estorno.RequisicaoEstorno
+import br.com.uol.pagbank.plugpagservice.demo.estorno.ServicoEstorno
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.RequisicaoPagamento
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.ServicoPagamento
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
@@ -19,10 +21,18 @@ class ServidorHttpPagamento(
     }
 
     private val gson = Gson()
+
     private val servicoPagamento = ServicoPagamento(
         context.applicationContext,
         plugPag
     )
+
+    private val servicoEstorno = ServicoEstorno(
+        context.applicationContext,
+        plugPag
+    )
+
+    private val bloqueioPlugPag = Any()
 
     override fun serve(session: IHTTPSession): Response {
         return try {
@@ -30,71 +40,122 @@ class ServidorHttpPagamento(
                 session.method == Method.POST && session.uri == "/pagamentos" ->
                     receberPagamento(session)
 
+                session.method == Method.POST && session.uri == "/estornos" ->
+                    receberEstorno(session)
+
                 else ->
-                    newFixedLengthResponse(
+                    respostaErro(
                         Response.Status.NOT_FOUND,
-                        MIME_JSON,
-                        gson.toJson(
-                            mapOf("erro" to "Rota não encontrada.")
-                        )
+                        "Rota não encontrada."
                     )
             }
         } catch (e: Exception) {
-            Log.e("ServidorHttpPagamento", "Erro na requisição", e)
+            Log.e("ServidorHttp", "Erro ao processar requisição", e)
 
-            newFixedLengthResponse(
+            respostaErro(
                 Response.Status.INTERNAL_ERROR,
-                MIME_JSON,
-                gson.toJson(
-                    mapOf(
-                        "erro" to (e.message ?: "Erro interno.")
-                    )
-                )
+                e.message ?: "Erro interno."
             )
         }
     }
 
     private fun receberPagamento(session: IHTTPSession): Response {
-        val arquivos = HashMap<String, String>()
-
-        session.parseBody(arquivos)
-
-        val json = arquivos["postData"]
-
-        if (json.isNullOrBlank()) {
-            return newFixedLengthResponse(
+        val json = obterCorpo(session)
+            ?: return respostaErro(
                 Response.Status.BAD_REQUEST,
-                MIME_JSON,
-                gson.toJson(
-                    mapOf("erro" to "Corpo da requisição não informado.")
-                )
+                "Corpo da requisição não informado."
             )
-        }
-
-        Log.i("ServidorHttpPagamento", "Pagamento recebido: $json")
 
         val requisicao = try {
             gson.fromJson(json, RequisicaoPagamento::class.java)
         } catch (e: Exception) {
-            return newFixedLengthResponse(
+            return respostaErro(
                 Response.Status.BAD_REQUEST,
-                MIME_JSON,
-                gson.toJson(
-                    mapOf("erro" to "JSON de pagamento inválido.")
-                )
+                "JSON de pagamento inválido."
             )
         }
 
-        val resposta = servicoPagamento.executar(requisicao)
+        Log.i(
+            "ServidorHttp",
+            "Pagamento recebido. PedidoId=${requisicao.pedidoId}"
+        )
+
+        val resposta = synchronized(bloqueioPlugPag) {
+            servicoPagamento.executar(requisicao)
+        }
 
         val jsonResposta = gson.toJson(resposta)
 
-        Log.i("ServidorHttpPagamento", "Pagamento finalizado: $jsonResposta")
+        Log.i(
+            "ServidorHttp",
+            "Pagamento finalizado. PedidoId=${requisicao.pedidoId}"
+        )
 
+        return respostaOk(jsonResposta)
+    }
+
+    private fun receberEstorno(session: IHTTPSession): Response {
+        val json = obterCorpo(session)
+            ?: return respostaErro(
+                Response.Status.BAD_REQUEST,
+                "Corpo da requisição não informado."
+            )
+
+        val requisicao = try {
+            gson.fromJson(json, RequisicaoEstorno::class.java)
+        } catch (e: Exception) {
+            return respostaErro(
+                Response.Status.BAD_REQUEST,
+                "JSON de estorno inválido."
+            )
+        }
+
+        Log.i(
+            "ServidorHttp",
+            "Estorno recebido. TransactionId=${requisicao.transactionId}"
+        )
+
+        val resposta = synchronized(bloqueioPlugPag) {
+            servicoEstorno.executar(requisicao)
+        }
+
+        val jsonResposta = gson.toJson(resposta)
+
+        Log.i(
+            "ServidorHttp",
+            "Estorno finalizado. TransactionId=${requisicao.transactionId}"
+        )
+
+        return respostaOk(jsonResposta)
+    }
+
+    private fun obterCorpo(session: IHTTPSession): String? {
+        val arquivos = HashMap<String, String>()
+
+        session.parseBody(arquivos)
+
+        return arquivos["postData"]
+            ?.takeIf { it.isNotBlank() }
+    }
+
+    private fun respostaOk(json: String): Response {
         return newFixedLengthResponse(
             Response.Status.OK,
             MIME_JSON,
-            jsonResposta
+            json
+        )
+    }
+
+    private fun respostaErro(
+        status: Response.Status,
+        mensagem: String
+    ): Response {
+        return newFixedLengthResponse(
+            status,
+            MIME_JSON,
+            gson.toJson(
+                mapOf("erro" to mensagem)
+            )
         )
     }
 
@@ -102,7 +163,7 @@ class ServidorHttpPagamento(
         start(SOCKET_READ_TIMEOUT, false)
 
         Log.i(
-            "ServidorHttpPagamento",
+            "ServidorHttp",
             "Servidor HTTP iniciado na porta $PORTA"
         )
     }
