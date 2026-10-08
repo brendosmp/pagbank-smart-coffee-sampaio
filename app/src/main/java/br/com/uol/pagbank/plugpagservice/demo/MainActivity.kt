@@ -3,6 +3,8 @@ package br.com.uol.pagbank.plugpagservice.demo
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityMainBinding
 import br.com.uol.pagbank.plugpagservice.demo.terminal.IdentificadorTerminal
@@ -25,6 +27,22 @@ class MainActivity : AppCompatActivity() {
 
         if (!terminalJaExistia)
             abrirInformacoesTerminal()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menuVerTerminal -> {
+                abrirInformacoesTerminal()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     @SuppressLint("SetTextI18n")
