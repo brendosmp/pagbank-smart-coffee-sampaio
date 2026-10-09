@@ -21,6 +21,7 @@ class ServicoPagamento(
         validar(requisicao)
 
         EstadoPagamento.iniciar(requisicao)
+
         abrirTelaPagamento()
 
         configurarEventos()
@@ -31,33 +32,48 @@ class ServicoPagamento(
             installmentType = obterTipoParcelamento(requisicao.parcelamento),
             installments = requisicao.parcelas,
             userReference = obterReferencia(requisicao.pedidoId),
-            printReceipt = requisicao.imprimir,
+            printReceipt = true,
             partialPay = false,
             isCarne = false
         )
 
-        Log.i("PlugPag", "Iniciando pagamento")
+        Log.i(
+            "PlugPag",
+            "Iniciando pagamento. PedidoId=${requisicao.pedidoId}"
+        )
 
         val resultado = plugPag.doPayment(pagamento)
 
         Log.i(
             "PlugPag",
-            "Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
+            "Pagamento finalizado. Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
         )
 
-        val aprovado = resultado.result == PlugPag.RET_OK
+        when {
+            resultado.result == PlugPag.OPERATION_ABORTED -> {
+                EstadoPagamento.cancelar()
+            }
 
-        if (aprovado)
-            EstadoPagamento.finalizar(true, "Pagamento aprovado")
-        else
-            EstadoPagamento.finalizar(false, resultado.message ?: "Pagamento não autorizado")
+            resultado.result == PlugPag.RET_OK -> {
+                EstadoPagamento.finalizar(
+                    aprovado = true,
+                    mensagem = "Pagamento aprovado"
+                )
+            }
+
+            else -> {
+                EstadoPagamento.finalizar(
+                    aprovado = false,
+                    mensagem = resultado.message ?: "Pagamento não autorizado"
+                )
+            }
+        }
 
         return RespostaPagamento(
             pedidoId = requisicao.pedidoId,
             resultado = resultado
         )
     }
-
     private fun configurarEventos() {
         plugPag.setEventListener(object : PlugPagEventListener {
 

@@ -72,6 +72,18 @@
             android:textColor="@color/cinza_texto"
             android:textSize="17sp" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelarPagamento"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="32dp"
+            android:text="Cancelar pagamento"
+            android:textSize="15sp"
+            android:textColor="?attr/colorError"
+            app:strokeColor="?attr/colorError"
+            app:cornerRadius="14dp" />
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

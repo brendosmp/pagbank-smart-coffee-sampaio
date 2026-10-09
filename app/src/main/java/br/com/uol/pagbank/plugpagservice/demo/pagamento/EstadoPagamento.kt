@@ -9,7 +9,8 @@ data class DadosEstadoPagamento(
     val parcelas: Int = 1,
     val mensagem: String = "Realize o pagamento",
     val finalizado: Boolean = false,
-    val aprovado: Boolean? = null
+    val aprovado: Boolean? = null,
+    val cancelado: Boolean = false
 )
 
 object EstadoPagamento {
@@ -27,7 +28,21 @@ object EstadoPagamento {
                 parcelas = requisicao.parcelas,
                 mensagem = "Realize o pagamento",
                 finalizado = false,
-                aprovado = null
+                aprovado = null,
+                cancelado = false
+            )
+        )
+    }
+
+    fun cancelar() {
+        val atual = _estado.value ?: DadosEstadoPagamento()
+
+        _estado.postValue(
+            atual.copy(
+                mensagem = "Pagamento cancelado",
+                finalizado = true,
+                aprovado = false,
+                cancelado = true
             )
         )
     }

@@ -2,19 +2,25 @@ package br.com.uol.pagbank.plugpagservice.demo.ui.pagamento
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityPagamentoBinding
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.EstadoPagamento
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.TipoParcelamento
+import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
+import org.koin.android.ext.android.inject
 import java.text.NumberFormat
 import java.util.Locale
 
 class PagamentoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPagamentoBinding
+
+    private val plugPag: PlugPag by inject()
+
     private var animacao: AnimatorSet? = null
+    private var finalizacaoAgendada = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,26 +30,31 @@ class PagamentoActivity : AppCompatActivity() {
 
         iniciarAnimacao()
 
+        binding.btnCancelarPagamento.setOnClickListener {
+            cancelarPagamento()
+        }
+
         EstadoPagamento.estado.observe(this) { estado ->
             atualizarTela(
-                estado.valorCentavos,
-                estado.parcelamento,
-                estado.parcelas,
-                estado.mensagem,
-                estado.finalizado,
-                estado.aprovado
+                valorCentavos = estado.valorCentavos,
+                parcelamento = estado.parcelamento,
+                parcelas = estado.parcelas,
+                mensagem = estado.mensagem,
+                finalizado = estado.finalizado,
+                aprovado = estado.aprovado,
+                cancelado = estado.cancelado
             )
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private fun atualizarTela(
         valorCentavos: Int,
         parcelamento: TipoParcelamento,
         parcelas: Int,
         mensagem: String,
         finalizado: Boolean,
-        aprovado: Boolean?
+        aprovado: Boolean?,
+        cancelado: Boolean
     ) {
         binding.txtValor.text = formatarValor(valorCentavos)
         binding.txtParcelamento.text = formatarParcelamento(parcelamento, parcelas)
@@ -51,20 +62,47 @@ class PagamentoActivity : AppCompatActivity() {
 
         if (!finalizado) {
             binding.txtTitulo.text = "Realize o pagamento"
+            binding.btnCancelarPagamento.visibility = View.VISIBLE
             return
         }
 
         pararAnimacao()
 
-        binding.txtTitulo.text =
-            if (aprovado == true)
-                "Pagamento aprovado"
-            else
-                "Pagamento não autorizado"
+        binding.btnCancelarPagamento.visibility = View.GONE
 
-        binding.root.postDelayed({
-            finish()
-        }, 1500)
+        binding.txtTitulo.text = when {
+            cancelado -> "Pagamento cancelado"
+            aprovado == true -> "Pagamento aprovado"
+            else -> "Pagamento não autorizado"
+        }
+
+        if (!finalizacaoAgendada) {
+            finalizacaoAgendada = true
+
+            binding.root.postDelayed({
+                finish()
+            }, 1500)
+        }
+    }
+
+    private fun cancelarPagamento() {
+        binding.btnCancelarPagamento.isEnabled = false
+
+        EstadoPagamento.atualizarMensagem("Cancelando pagamento...")
+
+        Thread {
+            try {
+                plugPag.abort()
+            } catch (e: Exception) {
+                EstadoPagamento.atualizarMensagem(
+                    "Não foi possível cancelar o pagamento"
+                )
+
+                runOnUiThread {
+                    binding.btnCancelarPagamento.isEnabled = true
+                }
+            }
+        }.start()
     }
 
     private fun iniciarAnimacao() {
@@ -102,7 +140,12 @@ class PagamentoActivity : AppCompatActivity() {
         transparencia.duration = 1100
 
         animacao = AnimatorSet().apply {
-            playTogether(escalaX, escalaY, transparencia)
+            playTogether(
+                escalaX,
+                escalaY,
+                transparencia
+            )
+
             start()
         }
     }
@@ -120,11 +163,6 @@ class PagamentoActivity : AppCompatActivity() {
             .format(valor)
     }
 
-    override fun onDestroy() {
-        pararAnimacao()
-        super.onDestroy()
-    }
-
     private fun formatarParcelamento(
         parcelamento: TipoParcelamento,
         parcelas: Int
@@ -133,9 +171,19 @@ class PagamentoActivity : AppCompatActivity() {
             return "À vista"
 
         return when (parcelamento) {
-            TipoParcelamento.A_VISTA -> "À vista"
-            TipoParcelamento.PARC_VENDEDOR -> "${parcelas}x • Parcelado vendedor"
-            TipoParcelamento.PARC_COMPRADOR -> "${parcelas}x • Parcelado comprador"
+            TipoParcelamento.A_VISTA ->
+                "À vista"
+
+            TipoParcelamento.PARC_VENDEDOR ->
+                "${parcelas}x • Parcelado vendedor"
+
+            TipoParcelamento.PARC_COMPRADOR ->
+                "${parcelas}x • Parcelado comprador"
         }
+    }
+
+    override fun onDestroy() {
+        pararAnimacao()
+        super.onDestroy()
     }
 }
