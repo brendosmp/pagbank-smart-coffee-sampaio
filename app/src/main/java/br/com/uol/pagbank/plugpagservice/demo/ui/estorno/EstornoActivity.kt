@@ -2,23 +2,25 @@ package br.com.uol.pagbank.plugpagservice.demo.ui.estorno
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityEstornoBinding
 import br.com.uol.pagbank.plugpagservice.demo.estorno.EstadoEstorno
 
 class EstornoActivity : AppCompatActivity() {
-
+    private var animacaoLogo: AnimatorSet? = null
     private lateinit var binding: ActivityEstornoBinding
     private var animacao: AnimatorSet? = null
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityEstornoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        iniciarAnimacao()
+        iniciarAnimacaoLogo()
 
         EstadoEstorno.estado.observe(this) { estado ->
             binding.txtMensagem.text = estado.mensagem
@@ -42,25 +44,25 @@ class EstornoActivity : AppCompatActivity() {
         }
     }
 
-    private fun iniciarAnimacao() {
+    private fun iniciarAnimacaoLogo() {
         val escalaX = ObjectAnimator.ofFloat(
-            binding.bolinhaEstorno,
+            binding.imgLogoSampaio,
             "scaleX",
-            0.82f,
-            1.18f
+            0.88f,
+            1.12f
         )
 
         val escalaY = ObjectAnimator.ofFloat(
-            binding.bolinhaEstorno,
+            binding.imgLogoSampaio,
             "scaleY",
-            0.82f,
-            1.18f
+            0.88f,
+            1.12f
         )
 
         val transparencia = ObjectAnimator.ofFloat(
-            binding.bolinhaEstorno,
+            binding.imgLogoSampaio,
             "alpha",
-            0.55f,
+            0.65f,
             1f
         )
 
@@ -72,16 +74,15 @@ class EstornoActivity : AppCompatActivity() {
         escalaY.repeatCount = ObjectAnimator.INFINITE
         transparencia.repeatCount = ObjectAnimator.INFINITE
 
-        escalaX.duration = 1100
-        escalaY.duration = 1100
-        transparencia.duration = 1100
+        escalaX.duration = 1200
+        escalaY.duration = 1200
+        transparencia.duration = 1200
 
-        animacao = AnimatorSet().apply {
+        animacaoLogo = AnimatorSet().apply {
             playTogether(escalaX, escalaY, transparencia)
             start()
         }
     }
-
     private fun pararAnimacao() {
         animacao?.cancel()
         animacao = null

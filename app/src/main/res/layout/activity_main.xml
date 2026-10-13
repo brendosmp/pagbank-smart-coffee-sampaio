@@ -2,19 +2,21 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/verde_fundo_suave"
-    android:padding="24dp">
+    android:padding="24dp"
+    tools:ignore="HardcodedText">
 
-    <!-- PRIMEIRO ACESSO -->
     <LinearLayout
         android:id="@+id/layoutPrimeiroAcesso"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
+        android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -60,11 +62,11 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
                     android:text="TERMINAL ID"
                     android:textColor="@color/cinza_texto"
                     android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.08" />
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/txtTerminalIdPrimeiroAcesso"
@@ -92,7 +94,6 @@
 
     </LinearLayout>
 
-    <!-- TELA PADRÃO -->
     <LinearLayout
         android:id="@+id/layoutPadrao"
         android:layout_width="0dp"
@@ -105,24 +106,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/txtTerminalId"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/cinza_texto"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+        <FrameLayout
+            android:layout_width="190dp"
+            android:layout_height="190dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            tools:ignore="UselessParent">
 
-        <TextView
-            android:id="@+id/txtStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:gravity="center"
-            android:text="Aguardando PDV..."
-            android:textColor="@color/cinza_titulo"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            <ImageView
+                android:id="@+id/imgLogoSampaio"
+                android:layout_width="140dp"
+                android:layout_height="140dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:src="@drawable/sampaio_logo" />
+
+        </FrameLayout>
 
     </LinearLayout>
 

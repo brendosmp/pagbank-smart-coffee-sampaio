@@ -107,21 +107,21 @@ class PagamentoActivity : AppCompatActivity() {
 
     private fun iniciarAnimacao() {
         val escalaX = ObjectAnimator.ofFloat(
-            binding.bolinhaPagamento,
+            binding.imgLogoSampaio,
             "scaleX",
             0.82f,
             1.18f
         )
 
         val escalaY = ObjectAnimator.ofFloat(
-            binding.bolinhaPagamento,
+            binding.imgLogoSampaio,
             "scaleY",
             0.82f,
             1.18f
         )
 
         val transparencia = ObjectAnimator.ofFloat(
-            binding.bolinhaPagamento,
+            binding.imgLogoSampaio,
             "alpha",
             0.55f,
             1f
