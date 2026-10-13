@@ -38,12 +38,7 @@ class ServidorDescobertaTerminal(context: Context) {
 
                     socket?.receive(pacote)
 
-                    val mensagem = String(
-                        pacote.data,
-                        0,
-                        pacote.length,
-                        Charsets.UTF_8
-                    ).trim()
+                    val mensagem = String(pacote.data, 0, pacote.length, Charsets.UTF_8).trim()
 
                     Log.i(
                         "DescobertaTerminal",
@@ -73,12 +68,5 @@ class ServidorDescobertaTerminal(context: Context) {
                     Log.e("DescobertaTerminal", "Erro no servidor de descoberta", e)
             }
         }.start()
-    }
-
-    fun parar() {
-        executando = false
-
-        socket?.close()
-        socket = null
     }
 }

@@ -36,10 +36,7 @@ class ServicoPagamento(
             isCarne = false
         )
 
-        Log.i(
-            "PlugPag",
-            "Iniciando pagamento. PedidoId=${requisicao.pedidoId}"
-        )
+        Log.i("PlugPag", "Iniciando pagamento. PedidoId=${requisicao.pedidoId}")
 
         val resultado = plugPag.doPayment(pagamento)
 
@@ -48,18 +45,14 @@ class ServicoPagamento(
             "Pagamento finalizado. Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
         )
 
-        when {
-            resultado.result == PlugPag.OPERATION_ABORTED -> {
+        when (resultado.result) {
+            PlugPag.OPERATION_ABORTED -> {
                 EstadoPagamento.cancelar()
             }
 
-            resultado.result == PlugPag.RET_OK -> {
-                EstadoPagamento.finalizar(
-                    aprovado = true,
-                    mensagem = "Pagamento aprovado"
-                )
+            PlugPag.RET_OK -> {
+                EstadoPagamento.finalizar(aprovado = true, mensagem = "Pagamento aprovado")
             }
-
             else -> {
                 EstadoPagamento.finalizar(
                     aprovado = false,
@@ -68,20 +61,13 @@ class ServicoPagamento(
             }
         }
 
-        return RespostaPagamento(
-            pedidoId = requisicao.pedidoId,
-            resultado = resultado
-        )
+        return RespostaPagamento(pedidoId = requisicao.pedidoId, resultado = resultado)
     }
 
     private fun configurarEventos() {
         plugPag.setEventListener(object : PlugPagEventListener {
-
             override fun onEvent(data: PlugPagEventData) {
-                Log.i(
-                    "PlugPag",
-                    "Evento=${data.eventCode} Mensagem=${data.customMessage}"
-                )
+                Log.i("PlugPag", "Evento=${data.eventCode} Mensagem=${data.customMessage}")
 
                 if (data.customMessage.isNotBlank())
                     EstadoPagamento.atualizarMensagem(data.customMessage)

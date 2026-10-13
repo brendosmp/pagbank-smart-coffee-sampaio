@@ -9,7 +9,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
 class PayApplication : Application() {
-
     private lateinit var servidorDescobertaTerminal: ServidorDescobertaTerminal
     private lateinit var servidorHttpPagamento: ServidorHttpPagamento
 
@@ -26,11 +25,7 @@ class PayApplication : Application() {
         servidorDescobertaTerminal = ServidorDescobertaTerminal(this)
         servidorDescobertaTerminal.iniciar()
 
-        servidorHttpPagamento = ServidorHttpPagamento(
-            this,
-            plugPag
-        )
-
+        servidorHttpPagamento = ServidorHttpPagamento(this, plugPag)
         servidorHttpPagamento.iniciarServidor()
     }
 }

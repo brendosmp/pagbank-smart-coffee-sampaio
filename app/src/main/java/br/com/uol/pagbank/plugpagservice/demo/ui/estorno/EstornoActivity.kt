@@ -45,26 +45,9 @@ class EstornoActivity : AppCompatActivity() {
     }
 
     private fun iniciarAnimacaoLogo() {
-        val escalaX = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleX",
-            0.88f,
-            1.12f
-        )
-
-        val escalaY = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleY",
-            0.88f,
-            1.12f
-        )
-
-        val transparencia = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "alpha",
-            0.65f,
-            1f
-        )
+        val escalaX = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleX", 0.88f, 1.12f)
+        val escalaY = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleY", 0.88f, 1.12f)
+        val transparencia = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "alpha", 0.65f, 1f)
 
         escalaX.repeatMode = ObjectAnimator.REVERSE
         escalaY.repeatMode = ObjectAnimator.REVERSE

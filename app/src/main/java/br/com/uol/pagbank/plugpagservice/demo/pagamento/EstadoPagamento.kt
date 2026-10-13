@@ -14,11 +14,8 @@ data class DadosEstadoPagamento(
 )
 
 object EstadoPagamento {
-
     private val _estado = MutableLiveData(DadosEstadoPagamento())
-
-    val estado: LiveData<DadosEstadoPagamento>
-        get() = _estado
+    val estado: LiveData<DadosEstadoPagamento> get() = _estado
 
     fun iniciar(requisicao: RequisicaoPagamento) {
         _estado.postValue(
@@ -50,22 +47,12 @@ object EstadoPagamento {
     fun atualizarMensagem(mensagem: String) {
         val atual = _estado.value ?: DadosEstadoPagamento()
 
-        _estado.postValue(
-            atual.copy(
-                mensagem = mensagem
-            )
-        )
+        _estado.postValue(atual.copy(mensagem = mensagem))
     }
 
     fun finalizar(aprovado: Boolean, mensagem: String) {
         val atual = _estado.value ?: DadosEstadoPagamento()
 
-        _estado.postValue(
-            atual.copy(
-                mensagem = mensagem,
-                finalizado = true,
-                aprovado = aprovado
-            )
-        )
+        _estado.postValue(atual.copy(mensagem = mensagem, finalizado = true, aprovado = aprovado))
     }
 }

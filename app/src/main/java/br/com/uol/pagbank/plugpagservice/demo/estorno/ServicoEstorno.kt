@@ -9,11 +9,7 @@ import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventData
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventListener
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagVoidData
 
-class ServicoEstorno(
-    context: Context,
-    private val plugPag: PlugPag
-) {
-
+class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
     private val contexto = context.applicationContext
 
     @Synchronized
@@ -31,10 +27,7 @@ class ServicoEstorno(
             voidType = obterTipoEstorno(requisicao.tipo)
         )
 
-        Log.i(
-            "PlugPag",
-            "Iniciando estorno. TransactionId=${requisicao.transactionId}"
-        )
+        Log.i("PlugPag", "Iniciando estorno. TransactionId=${requisicao.transactionId}")
 
         val resultado = plugPag.voidPayment(dadosEstorno)
 
@@ -46,10 +39,7 @@ class ServicoEstorno(
         val sucesso = resultado.result == PlugPag.RET_OK
 
         if (sucesso) {
-            EstadoEstorno.finalizar(
-                sucesso = true,
-                mensagem = "Estorno realizado com sucesso"
-            )
+            EstadoEstorno.finalizar(sucesso = true, mensagem = "Estorno realizado com sucesso")
         } else {
             EstadoEstorno.finalizar(
                 sucesso = false,
@@ -57,19 +47,14 @@ class ServicoEstorno(
             )
         }
 
-        return RespostaEstorno(
-            resultado = resultado
-        )
+        return RespostaEstorno(resultado = resultado)
     }
 
     private fun configurarEventos() {
         plugPag.setEventListener(object : PlugPagEventListener {
 
             override fun onEvent(data: PlugPagEventData) {
-                Log.i(
-                    "PlugPag",
-                    "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}"
-                )
+                Log.i("PlugPag", "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}")
 
                 if (data.customMessage.isNotBlank())
                     EstadoEstorno.atualizarMensagem(data.customMessage)

@@ -14,7 +14,6 @@ import br.com.uol.pagbank.plugpagservice.demo.terminal.IdentificadorTerminal
 import br.com.uol.pagbank.plugpagservice.demo.ui.terminal.InformacoesTerminalActivity
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
     private var animacaoLogo: AnimatorSet? = null
 
@@ -24,23 +23,14 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val terminalId =
-            IdentificadorTerminal.obterOuCriar(this)
+        val terminalId = IdentificadorTerminal.obterOuCriar(this)
 
         mostrarTelaPadrao(terminalId)
 
-        if (
-            IdentificadorTerminal.deveMostrarPrimeiroAcesso(
-                this,
-                terminalId
-            )
-        ) {
+        if (IdentificadorTerminal.deveMostrarPrimeiroAcesso(this, terminalId)) {
             abrirInformacoesTerminal()
 
-            IdentificadorTerminal.marcarComoExibido(
-                this,
-                terminalId
-            )
+            IdentificadorTerminal.marcarComoExibido(this, terminalId)
         }
     }
 
@@ -61,10 +51,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun abrirInformacoesTerminal() {
-        val intent = Intent(
-            this,
-            InformacoesTerminalActivity::class.java
-        )
+        val intent = Intent(this, InformacoesTerminalActivity::class.java)
 
         startActivity(intent)
     }
@@ -81,26 +68,9 @@ class MainActivity : AppCompatActivity() {
         if (animacaoLogo != null)
             return
 
-        val escalaX = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleX",
-            0.88f,
-            1.12f
-        )
-
-        val escalaY = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleY",
-            0.88f,
-            1.12f
-        )
-
-        val transparencia = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "alpha",
-            0.65f,
-            1f
-        )
+        val escalaX = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleX", 0.88f, 1.12f)
+        val escalaY = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleY", 0.88f, 1.12f)
+        val transparencia = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "alpha", 0.65f, 1f)
 
         escalaX.repeatMode = ObjectAnimator.REVERSE
         escalaY.repeatMode = ObjectAnimator.REVERSE
@@ -115,11 +85,7 @@ class MainActivity : AppCompatActivity() {
         transparencia.duration = 1200
 
         animacaoLogo = AnimatorSet().apply {
-            playTogether(
-                escalaX,
-                escalaY,
-                transparencia
-            )
+            playTogether(escalaX, escalaY, transparencia)
 
             start()
         }

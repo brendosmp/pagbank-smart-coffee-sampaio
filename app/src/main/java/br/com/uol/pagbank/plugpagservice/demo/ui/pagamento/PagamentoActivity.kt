@@ -2,6 +2,7 @@ package br.com.uol.pagbank.plugpagservice.demo.ui.pagamento
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -47,6 +48,7 @@ class PagamentoActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun atualizarTela(
         valorCentavos: Int,
         parcelamento: TipoParcelamento,
@@ -94,9 +96,7 @@ class PagamentoActivity : AppCompatActivity() {
             try {
                 plugPag.abort()
             } catch (e: Exception) {
-                EstadoPagamento.atualizarMensagem(
-                    "Não foi possível cancelar o pagamento"
-                )
+                EstadoPagamento.atualizarMensagem("Não foi possível cancelar o pagamento")
 
                 runOnUiThread {
                     binding.btnCancelarPagamento.isEnabled = true
@@ -106,26 +106,9 @@ class PagamentoActivity : AppCompatActivity() {
     }
 
     private fun iniciarAnimacao() {
-        val escalaX = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleX",
-            0.82f,
-            1.18f
-        )
-
-        val escalaY = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "scaleY",
-            0.82f,
-            1.18f
-        )
-
-        val transparencia = ObjectAnimator.ofFloat(
-            binding.imgLogoSampaio,
-            "alpha",
-            0.55f,
-            1f
-        )
+        val escalaX = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleX", 0.82f, 1.18f)
+        val escalaY = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "scaleY", 0.82f, 1.18f)
+        val transparencia = ObjectAnimator.ofFloat(binding.imgLogoSampaio, "alpha", 0.55f, 1f)
 
         escalaX.repeatMode = ObjectAnimator.REVERSE
         escalaY.repeatMode = ObjectAnimator.REVERSE
@@ -140,12 +123,7 @@ class PagamentoActivity : AppCompatActivity() {
         transparencia.duration = 1100
 
         animacao = AnimatorSet().apply {
-            playTogether(
-                escalaX,
-                escalaY,
-                transparencia
-            )
-
+            playTogether(escalaX, escalaY, transparencia)
             start()
         }
     }
@@ -163,22 +141,14 @@ class PagamentoActivity : AppCompatActivity() {
             .format(valor)
     }
 
-    private fun formatarParcelamento(
-        parcelamento: TipoParcelamento,
-        parcelas: Int
-    ): String {
+    private fun formatarParcelamento(parcelamento: TipoParcelamento, parcelas: Int): String {
         if (parcelamento == TipoParcelamento.A_VISTA || parcelas <= 1)
             return "À vista"
 
         return when (parcelamento) {
-            TipoParcelamento.A_VISTA ->
-                "À vista"
-
-            TipoParcelamento.PARC_VENDEDOR ->
-                "${parcelas}x • Parcelado vendedor"
-
-            TipoParcelamento.PARC_COMPRADOR ->
-                "${parcelas}x • Parcelado comprador"
+            TipoParcelamento.A_VISTA -> "À vista"
+            TipoParcelamento.PARC_VENDEDOR -> "${parcelas}x • Parcelado vendedor"
+            TipoParcelamento.PARC_COMPRADOR -> "${parcelas}x • Parcelado comprador"
         }
     }
 

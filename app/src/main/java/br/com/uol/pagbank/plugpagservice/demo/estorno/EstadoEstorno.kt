@@ -10,11 +10,8 @@ data class DadosEstadoEstorno(
 )
 
 object EstadoEstorno {
-
     private val _estado = MutableLiveData(DadosEstadoEstorno())
-
-    val estado: LiveData<DadosEstadoEstorno>
-        get() = _estado
+    val estado: LiveData<DadosEstadoEstorno> get() = _estado
 
     fun iniciar() {
         _estado.postValue(
@@ -29,22 +26,12 @@ object EstadoEstorno {
     fun atualizarMensagem(mensagem: String) {
         val atual = _estado.value ?: DadosEstadoEstorno()
 
-        _estado.postValue(
-            atual.copy(
-                mensagem = mensagem
-            )
-        )
+        _estado.postValue(atual.copy(mensagem = mensagem))
     }
 
     fun finalizar(sucesso: Boolean, mensagem: String) {
         val atual = _estado.value ?: DadosEstadoEstorno()
 
-        _estado.postValue(
-            atual.copy(
-                mensagem = mensagem,
-                finalizado = true,
-                sucesso = sucesso
-            )
-        )
+        _estado.postValue(atual.copy(mensagem = mensagem, finalizado = true, sucesso = sucesso))
     }
 }
