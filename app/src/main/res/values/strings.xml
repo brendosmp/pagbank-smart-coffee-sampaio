@@ -3,7 +3,7 @@
 
     <string name="waiting">Aguardando</string>
     <string name="value_placeholder">Digite o valor</string>
-    <string name="aproach_card">Aproxime o cartão do leitor...</string>
+    <string name="aproach_card">Aproxime o cartão do leitor…</string>
     <string name="fail_to_detect">Falha ao detectar o cartão</string>
     <string name="autenticate_card">autenticando cartão..</string>
     <string name="executing_operation">Executando operação</string>
@@ -79,7 +79,7 @@
     <!-- Other -->
     <string name="title_other">Outros</string>
     <string name="other_reboot">Reiniciar</string>
-    <string name="other_rebooting">Reiniciando...</string>
+    <string name="other_rebooting">Reiniciando…</string>
     <string name="other_beep">Beep</string>
     <string name="other_beeping">Beepando na frequência</string>
     <string name="other_led">LED</string>
