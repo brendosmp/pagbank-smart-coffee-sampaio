@@ -83,6 +83,7 @@ class EstornoActivity : AppCompatActivity() {
             start()
         }
     }
+
     private fun pararAnimacao() {
         animacao?.cancel()
         animacao = null

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/verde_fundo_suave"
     android:padding="32dp"
-    tools:ignore="HardcodedText" >
+    tools:ignore="HardcodedText">
 
     <LinearLayout
         android:layout_width="0dp"

@@ -69,15 +69,6 @@ class MainActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private fun mostrarPrimeiroAcesso(terminalId: String) {
-        pararAnimacaoLogo()
-
-        binding.layoutPrimeiroAcesso.visibility = View.VISIBLE
-        binding.layoutPadrao.visibility = View.GONE
-
-        binding.txtTerminalIdPrimeiroAcesso.text = terminalId
-    }
-
     @SuppressLint("SetTextI18n")
     private fun mostrarTelaPadrao(terminalId: String) {
         binding.layoutPrimeiroAcesso.visibility = View.GONE

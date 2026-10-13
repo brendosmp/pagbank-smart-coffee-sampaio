@@ -16,7 +16,6 @@ class ServicoPagamento(
 
     private val contexto = context.applicationContext
 
-    @Synchronized
     fun executar(requisicao: RequisicaoPagamento): RespostaPagamento {
         validar(requisicao)
 
@@ -74,6 +73,7 @@ class ServicoPagamento(
             resultado = resultado
         )
     }
+
     private fun configurarEventos() {
         plugPag.setEventListener(object : PlugPagEventListener {
 

@@ -17,11 +17,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
         tools:ignore="PhotoAndVideoPolicy,SelectedPhotoAccess" />
 
-    <uses-permission
-        android:name="br.com.uol.pagseguro.permission.MANAGE_PAYMENTS" />
+    <uses-permission android:name="br.com.uol.pagseguro.permission.MANAGE_PAYMENTS" />
 
     <application
         android:name=".PayApplication"
@@ -52,8 +52,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            >
+            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
