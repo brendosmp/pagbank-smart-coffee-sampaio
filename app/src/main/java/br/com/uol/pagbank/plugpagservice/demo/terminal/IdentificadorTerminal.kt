@@ -1,27 +1,28 @@
 package br.com.uol.pagbank.plugpagservice.demo.terminal
 
 import android.content.Context
-import java.util.UUID
 import androidx.core.content.edit
+import java.util.UUID
 
-object IdentificadorTerminal  {
+object IdentificadorTerminal {
+
     private const val PREFERENCIAS = "terminal"
     private const val CHAVE_TERMINAL_ID = "terminal_id"
-
-    fun existe(context: Context): Boolean {
-        val preferencias = context.getSharedPreferences(PREFERENCIAS, Context.MODE_PRIVATE)
-
-        return !preferencias
-            .getString(CHAVE_TERMINAL_ID, null)
-            .isNullOrBlank()
-    }
+    private const val CHAVE_TERMINAL_ID_EXIBIDO = "terminal_id_exibido"
 
     fun obterOuCriar(context: Context): String {
-        val preferencias = context.getSharedPreferences(PREFERENCIAS, Context.MODE_PRIVATE)
-        val terminalIdExistente = preferencias.getString(CHAVE_TERMINAL_ID, null)
+        val preferencias = context.getSharedPreferences(
+            PREFERENCIAS,
+            Context.MODE_PRIVATE
+        )
 
-        if (!terminalIdExistente.isNullOrBlank())
-            return terminalIdExistente
+        val existente = preferencias.getString(
+            CHAVE_TERMINAL_ID,
+            null
+        )
+
+        if (!existente.isNullOrBlank())
+            return existente
 
         val terminalId = UUID.randomUUID()
             .toString()
@@ -34,5 +35,37 @@ object IdentificadorTerminal  {
         }
 
         return terminalId
+    }
+
+    fun deveMostrarPrimeiroAcesso(
+        context: Context,
+        terminalId: String
+    ): Boolean {
+        val preferencias = context.getSharedPreferences(
+            PREFERENCIAS,
+            Context.MODE_PRIVATE
+        )
+
+        val terminalIdExibido = preferencias.getString(
+            CHAVE_TERMINAL_ID_EXIBIDO,
+            null
+        )
+
+        return terminalIdExibido != terminalId
+    }
+
+    fun marcarComoExibido(
+        context: Context,
+        terminalId: String
+    ) {
+        context.getSharedPreferences(
+            PREFERENCIAS,
+            Context.MODE_PRIVATE
+        ).edit {
+            putString(
+                CHAVE_TERMINAL_ID_EXIBIDO,
+                terminalId
+            )
+        }
     }
 }

@@ -5,21 +5,18 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityMainBinding
-import br.com.uol.pagbank.plugpagservice.demo.pagamento.EstadoPagamento
 import br.com.uol.pagbank.plugpagservice.demo.terminal.IdentificadorTerminal
-import br.com.uol.pagbank.plugpagservice.demo.ui.pagamento.PagamentoActivity
 import br.com.uol.pagbank.plugpagservice.demo.ui.terminal.InformacoesTerminalActivity
 
 class MainActivity : AppCompatActivity() {
-    private var animacaoLogo: AnimatorSet? = null
+
     private lateinit var binding: ActivityMainBinding
+    private var animacaoLogo: AnimatorSet? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,15 +24,24 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        iniciarAnimacaoLogo()
+        val terminalId =
+            IdentificadorTerminal.obterOuCriar(this)
 
-        val terminalJaExistia = IdentificadorTerminal.existe(this)
-        val terminalId = IdentificadorTerminal.obterOuCriar(this)
+        mostrarTelaPadrao(terminalId)
 
-        if (terminalJaExistia)
-            mostrarTelaPadrao(terminalId)
-        else
-            mostrarPrimeiroAcesso(terminalId)
+        if (
+            IdentificadorTerminal.deveMostrarPrimeiroAcesso(
+                this,
+                terminalId
+            )
+        ) {
+            abrirInformacoesTerminal()
+
+            IdentificadorTerminal.marcarComoExibido(
+                this,
+                terminalId
+            )
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -55,11 +61,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun abrirInformacoesTerminal() {
-        val intent = Intent(this, InformacoesTerminalActivity::class.java)
+        val intent = Intent(
+            this,
+            InformacoesTerminalActivity::class.java
+        )
+
         startActivity(intent)
     }
 
+    private fun mostrarPrimeiroAcesso(terminalId: String) {
+        pararAnimacaoLogo()
+
+        binding.layoutPrimeiroAcesso.visibility = View.VISIBLE
+        binding.layoutPadrao.visibility = View.GONE
+
+        binding.txtTerminalIdPrimeiroAcesso.text = terminalId
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun mostrarTelaPadrao(terminalId: String) {
+        binding.layoutPrimeiroAcesso.visibility = View.GONE
+        binding.layoutPadrao.visibility = View.VISIBLE
+
+        iniciarAnimacaoLogo()
+    }
+
     private fun iniciarAnimacaoLogo() {
+        if (animacaoLogo != null)
+            return
+
         val escalaX = ObjectAnimator.ofFloat(
             binding.imgLogoSampaio,
             "scaleX",
@@ -94,22 +124,23 @@ class MainActivity : AppCompatActivity() {
         transparencia.duration = 1200
 
         animacaoLogo = AnimatorSet().apply {
-            playTogether(escalaX, escalaY, transparencia)
+            playTogether(
+                escalaX,
+                escalaY,
+                transparencia
+            )
+
             start()
         }
     }
 
-    private fun mostrarPrimeiroAcesso(terminalId: String) {
-        binding.layoutPrimeiroAcesso.visibility = View.VISIBLE
-        binding.layoutPadrao.visibility = View.GONE
-        binding.txtTerminalIdPrimeiroAcesso.text = terminalId
+    private fun pararAnimacaoLogo() {
+        animacaoLogo?.cancel()
+        animacaoLogo = null
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun mostrarTelaPadrao(terminalId: String) {
-        binding.layoutPrimeiroAcesso.visibility = View.GONE
-        binding.layoutPadrao.visibility = View.VISIBLE
-
-        iniciarAnimacaoLogo()
+    override fun onDestroy() {
+        pararAnimacaoLogo()
+        super.onDestroy()
     }
 }
