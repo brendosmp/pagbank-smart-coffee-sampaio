@@ -53,6 +53,7 @@ class ServicoPagamento(
             PlugPag.RET_OK -> {
                 EstadoPagamento.finalizar(aprovado = true, mensagem = "Pagamento aprovado")
             }
+
             else -> {
                 EstadoPagamento.finalizar(
                     aprovado = false,

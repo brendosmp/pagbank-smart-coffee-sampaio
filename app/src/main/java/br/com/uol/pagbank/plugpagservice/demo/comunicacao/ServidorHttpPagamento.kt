@@ -48,7 +48,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
 
         val requisicao = try {
             gson.fromJson(json, RequisicaoPagamento::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return respostaErro(Response.Status.BAD_REQUEST, "JSON de pagamento inválido.")
         }
 
@@ -73,7 +73,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
 
         val requisicao = try {
             gson.fromJson(json, RequisicaoEstorno::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return respostaErro(Response.Status.BAD_REQUEST, "JSON de estorno inválido.")
         }
 

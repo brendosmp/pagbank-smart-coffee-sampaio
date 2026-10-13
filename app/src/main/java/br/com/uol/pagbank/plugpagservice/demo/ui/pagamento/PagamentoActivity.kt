@@ -15,11 +15,8 @@ import java.text.NumberFormat
 import java.util.Locale
 
 class PagamentoActivity : AppCompatActivity() {
-
-    private lateinit var binding: ActivityPagamentoBinding
-
     private val plugPag: PlugPag by inject()
-
+    private lateinit var binding: ActivityPagamentoBinding
     private var animacao: AnimatorSet? = null
     private var finalizacaoAgendada = false
 

@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
 
         val terminalId = IdentificadorTerminal.obterOuCriar(this)
 
-        mostrarTelaPadrao(terminalId)
+        mostrarTelaPadrao()
 
         if (IdentificadorTerminal.deveMostrarPrimeiroAcesso(this, terminalId)) {
             abrirInformacoesTerminal()
@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun mostrarTelaPadrao(terminalId: String) {
+    private fun mostrarTelaPadrao() {
         binding.layoutPrimeiroAcesso.visibility = View.GONE
         binding.layoutPadrao.visibility = View.VISIBLE
 
