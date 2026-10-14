@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/verde_fundo_suave"
-    android:padding="32dp"
+    android:padding="24dp"
     tools:ignore="HardcodedText">
 
     <LinearLayout
@@ -19,40 +19,61 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <FrameLayout
-            android:layout_width="110dp"
-            android:layout_height="110dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:clipChildren="false"
             android:clipToPadding="false">
 
-            <View
+            <ImageView
                 android:id="@+id/imgLogoSampaio"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="105dp"
+                android:layout_height="105dp"
                 android:layout_gravity="center"
-                android:background="@drawable/sampaio_logo" />
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:src="@drawable/sampaio_logo" />
 
         </FrameLayout>
 
         <TextView
             android:id="@+id/txtTitulo"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:gravity="center"
-            android:text="Realizando estorno"
+            android:text="Estorno"
             android:textColor="@color/cinza_titulo"
-            android:textSize="24sp"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtValor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/cinza_titulo"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txtMensagem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="28dp"
             android:gravity="center"
             android:text="Preparando estorno..."
             android:textColor="@color/cinza_texto"
             android:textSize="17sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelarEstorno"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="32dp"
+            android:text="Cancelar estorno"
+            android:textColor="?attr/colorError"
+            android:textSize="15sp"
+            app:cornerRadius="14dp"
+            app:strokeColor="?attr/colorError" />
 
     </LinearLayout>
 

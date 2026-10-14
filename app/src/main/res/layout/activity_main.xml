@@ -128,7 +128,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="SAMPAIO Si"
+            android:text="SAMPAIO SI"
             android:textColor="@color/cinza_titulo"
             android:textSize="24sp"
             android:textStyle="bold" />
