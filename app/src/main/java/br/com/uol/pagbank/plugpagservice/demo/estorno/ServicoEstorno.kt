@@ -20,14 +20,24 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
         abrirTelaEstorno()
         configurarEventos()
 
-        val dadosEstorno = PlugPagVoidData(
-            transactionCode = requisicao.transactionCode,
-            transactionId = requisicao.transactionId,
-            printReceipt = requisicao.imprimir,
-            voidType = obterTipoEstorno(requisicao.tipo)
+        Log.i(
+            "PlugPag",
+            "Estorno: transactionCode=${requisicao.transactionCode}, " +
+                    "transactionId=${requisicao.transactionId}, " +
+                    "tipo=${requisicao.tipo}"
         )
 
-        Log.i("PlugPag", "Iniciando estorno. TransactionId=${requisicao.transactionId}")
+        val dadosEstorno = PlugPagVoidData(
+            requisicao.transactionCode,
+            requisicao.transactionId,
+            requisicao.imprimir,
+            when (requisicao.tipo) {
+                TipoEstorno.CARTAO -> PlugPag.VOID_PAYMENT
+                TipoEstorno.PIX -> PlugPag.VOID_QRCODE
+            }
+        )
+
+        Log.i("PlugPag", "Chamando voidPayment...")
 
         val resultado = plugPag.voidPayment(dadosEstorno)
 
