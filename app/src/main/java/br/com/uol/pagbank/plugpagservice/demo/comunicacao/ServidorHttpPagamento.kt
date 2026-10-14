@@ -11,6 +11,7 @@ import com.google.gson.Gson
 import fi.iki.elonen.NanoHTTPD
 
 class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0.0.0", PORTA) {
+
     companion object {
         private const val PORTA = 9090
         private const val MIME_JSON = "application/json; charset=utf-8"
@@ -24,32 +25,69 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
     override fun serve(session: IHTTPSession): Response {
         return try {
             when {
-                session.method == Method.POST && session.uri == "/pagamentos" -> receberPagamento(
-                    session
-                )
+                session.method == Method.POST && session.uri == "/pagamentos" ->
+                    receberPagamento(session)
 
-                session.method == Method.POST && session.uri == "/estornos" -> receberEstorno(
-                    session
-                )
+                session.method == Method.POST && session.uri == "/estornos" ->
+                    receberEstorno(session)
 
-                else -> respostaErro(Response.Status.NOT_FOUND, "Rota não encontrada.")
+                else ->
+                    respostaErro(
+                        Response.Status.NOT_FOUND,
+                        "ROTA_NAO_ENCONTRADA",
+                        "O recurso solicitado não foi encontrado."
+                    )
             }
+        } catch (e: IllegalArgumentException) {
+            Log.e("ServidorHttp", "Requisição inválida", e)
+
+            respostaErro(
+                Response.Status.BAD_REQUEST,
+                "REQUISICAO_INVALIDA",
+                e.message ?: "Os dados enviados são inválidos."
+            )
+        } catch (e: TerminalNaoAutenticadoException) {
+            Log.e("ServidorHttp", "Terminal não autenticado", e)
+
+            respostaErro(
+                Response.Status.SERVICE_UNAVAILABLE,
+                "TERMINAL_NAO_ATIVADO",
+                e.message ?: "A Moderninha não está ativada."
+            )
+        } catch (e: TerminalOcupadoException) {
+            Log.e("ServidorHttp", "Terminal ocupado", e)
+
+            respostaErro(
+                Response.Status.CONFLICT,
+                "TERMINAL_OCUPADO",
+                e.message ?: "A Moderninha está ocupada."
+            )
         } catch (e: Exception) {
-            Log.e("ServidorHttp", "Erro ao processar requisição", e)
-            respostaErro(Response.Status.INTERNAL_ERROR, e.message ?: "Erro interno.")
+            Log.e("ServidorHttp", "Erro inesperado", e)
+
+            respostaErro(
+                Response.Status.INTERNAL_ERROR,
+                "ERRO_INTERNO",
+                "Ocorreu um erro interno ao processar a operação."
+            )
         }
     }
 
     private fun receberPagamento(session: IHTTPSession): Response {
         val json = obterCorpo(session) ?: return respostaErro(
             Response.Status.BAD_REQUEST,
-            "Corpo da requisição não informado."
+            "CORPO_NAO_INFORMADO",
+            "O corpo da requisição de pagamento não foi informado."
         )
 
         val requisicao = try {
             gson.fromJson(json, RequisicaoPagamento::class.java)
         } catch (_: Exception) {
-            return respostaErro(Response.Status.BAD_REQUEST, "JSON de pagamento inválido.")
+            return respostaErro(
+                Response.Status.BAD_REQUEST,
+                "JSON_PAGAMENTO_INVALIDO",
+                "Os dados enviados para o pagamento estão em formato inválido."
+            )
         }
 
         Log.i("ServidorHttp", "Pagamento recebido. PedidoId=${requisicao.pedidoId}")
@@ -58,23 +96,26 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
             servicoPagamento.executar(requisicao)
         }
 
-        val jsonResposta = gson.toJson(resposta)
-
         Log.i("ServidorHttp", "Pagamento finalizado. PedidoId=${requisicao.pedidoId}")
 
-        return respostaOk(jsonResposta)
+        return respostaOk(gson.toJson(resposta))
     }
 
     private fun receberEstorno(session: IHTTPSession): Response {
         val json = obterCorpo(session) ?: return respostaErro(
             Response.Status.BAD_REQUEST,
-            "Corpo da requisição não informado."
+            "CORPO_NAO_INFORMADO",
+            "O corpo da requisição de estorno não foi informado."
         )
 
         val requisicao = try {
             gson.fromJson(json, RequisicaoEstorno::class.java)
         } catch (_: Exception) {
-            return respostaErro(Response.Status.BAD_REQUEST, "JSON de estorno inválido.")
+            return respostaErro(
+                Response.Status.BAD_REQUEST,
+                "JSON_ESTORNO_INVALIDO",
+                "Os dados enviados para o estorno estão em formato inválido."
+            )
         }
 
         Log.i("ServidorHttp", "Estorno recebido. TransactionId=${requisicao.transactionId}")
@@ -83,16 +124,13 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
             servicoEstorno.executar(requisicao)
         }
 
-        val jsonResposta = gson.toJson(resposta)
-
         Log.i("ServidorHttp", "Estorno finalizado. TransactionId=${requisicao.transactionId}")
 
-        return respostaOk(jsonResposta)
+        return respostaOk(gson.toJson(resposta))
     }
 
     private fun obterCorpo(session: IHTTPSession): String? {
         val arquivos = HashMap<String, String>()
-
         session.parseBody(arquivos)
 
         return arquivos["postData"]?.takeIf { it.isNotBlank() }
@@ -102,8 +140,9 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
         return newFixedLengthResponse(Response.Status.OK, MIME_JSON, json)
     }
 
-    private fun respostaErro(status: Response.Status, mensagem: String): Response {
-        return newFixedLengthResponse(status, MIME_JSON, gson.toJson(mapOf("erro" to mensagem)))
+    private fun respostaErro(status: Response.Status, codigo: String, mensagem: String): Response {
+        val erro = RespostaErro(codigo, mensagem)
+        return newFixedLengthResponse(status, MIME_JSON, gson.toJson(erro))
     }
 
     fun iniciarServidor() {

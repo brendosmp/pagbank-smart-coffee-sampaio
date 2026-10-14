@@ -4,15 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import br.com.uol.pagbank.plugpagservice.demo.ui.pagamento.PagamentoActivity
+import br.com.uol.pagbank.plugpagservice.demo.wrapper.ValidadorPlugPag
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventData
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventListener
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagPaymentData
 
-class ServicoPagamento(
-    context: Context,
-    private val plugPag: PlugPag
-) {
+class ServicoPagamento(context: Context, private val plugPag: PlugPag) {
 
     private val contexto = context.applicationContext
 
@@ -20,9 +18,7 @@ class ServicoPagamento(
         validar(requisicao)
 
         EstadoPagamento.iniciar(requisicao)
-
         abrirTelaPagamento()
-
         configurarEventos()
 
         val pagamento = PlugPagPaymentData(
@@ -46,34 +42,19 @@ class ServicoPagamento(
         )
 
         when (resultado.result) {
-            PlugPag.OPERATION_ABORTED -> {
-                EstadoPagamento.cancelar()
-            }
+            PlugPag.OPERATION_ABORTED -> EstadoPagamento.cancelar()
 
-            PlugPag.RET_OK -> {
-                EstadoPagamento.finalizar(aprovado = true, mensagem = "Pagamento aprovado")
-            }
+            PlugPag.RET_OK ->
+                EstadoPagamento.finalizar(true, "Pagamento aprovado")
 
-            else -> {
+            else ->
                 EstadoPagamento.finalizar(
-                    aprovado = false,
-                    mensagem = resultado.message ?: "Pagamento não autorizado"
+                    false,
+                    resultado.message ?: "Pagamento não autorizado"
                 )
-            }
         }
 
-        return RespostaPagamento(pedidoId = requisicao.pedidoId, resultado = resultado)
-    }
-
-    private fun configurarEventos() {
-        plugPag.setEventListener(object : PlugPagEventListener {
-            override fun onEvent(data: PlugPagEventData) {
-                Log.i("PlugPag", "Evento=${data.eventCode} Mensagem=${data.customMessage}")
-
-                if (data.customMessage.isNotBlank())
-                    EstadoPagamento.atualizarMensagem(data.customMessage)
-            }
-        })
+        return RespostaPagamento(requisicao.pedidoId, resultado)
     }
 
     private fun validar(requisicao: RequisicaoPagamento) {
@@ -89,11 +70,21 @@ class ServicoPagamento(
             "Quantidade de parcelas inválida."
         }
 
-        if (!plugPag.isAuthenticated())
-            throw IllegalStateException("Terminal PagBank não está autenticado.")
+        ValidadorPlugPag.validarDisponibilidade(plugPag)
+    }
 
-        if (plugPag.isServiceBusy())
-            throw IllegalStateException("Terminal PagBank está ocupado.")
+    private fun configurarEventos() {
+        plugPag.setEventListener(object : PlugPagEventListener {
+            override fun onEvent(data: PlugPagEventData) {
+                Log.i(
+                    "PlugPag",
+                    "Evento=${data.eventCode} Mensagem=${data.customMessage}"
+                )
+
+                if (data.customMessage.isNotBlank())
+                    EstadoPagamento.atualizarMensagem(data.customMessage)
+            }
+        })
     }
 
     private fun obterTipoPagamento(tipo: TipoPagamento): Int {
@@ -113,9 +104,7 @@ class ServicoPagamento(
     }
 
     private fun obterReferencia(pedidoId: String): String {
-        return pedidoId
-            .filter { it.isLetterOrDigit() }
-            .take(10)
+        return pedidoId.filter { it.isLetterOrDigit() }.take(10)
     }
 
     private fun abrirTelaPagamento() {

@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import br.com.uol.pagbank.plugpagservice.demo.ui.estorno.EstornoActivity
+import br.com.uol.pagbank.plugpagservice.demo.wrapper.ValidadorPlugPag
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventData
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventListener
@@ -40,7 +41,6 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
             "PlugPag",
             "Estorno: transactionCode=${requisicao.transactionCode}, transactionId=${requisicao.transactionId}, tipo=${requisicao.tipo}"
         )
-        Log.i("PlugPag", "Chamando voidPayment...")
 
         val resultado = plugPag.voidPayment(dadosEstorno)
 
@@ -49,17 +49,17 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
             "Estorno finalizado. Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
         )
 
-        when {
-            resultado.result == PlugPag.OPERATION_ABORTED -> EstadoEstorno.cancelar()
+        when (resultado.result) {
+            PlugPag.OPERATION_ABORTED ->
+                EstadoEstorno.cancelar()
 
-            resultado.result == PlugPag.RET_OK ->
+            PlugPag.RET_OK ->
                 EstadoEstorno.finalizar(true, "Estorno realizado com sucesso")
 
-            else ->
-                EstadoEstorno.finalizar(
-                    false,
-                    resultado.message ?: "Não foi possível realizar o estorno"
-                )
+            else -> EstadoEstorno.finalizar(
+                false,
+                resultado.message ?: "Não foi possível realizar o estorno"
+            )
         }
 
         return RespostaEstorno(resultado)
@@ -72,11 +72,7 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
         if (requisicao.transactionId.isBlank())
             throw IllegalArgumentException("TransactionId não informado.")
 
-        if (!plugPag.isAuthenticated())
-            throw IllegalStateException("Moderninha não ativada.")
-
-        if (plugPag.isServiceBusy())
-            throw IllegalStateException("PlugPag ocupado.")
+        ValidadorPlugPag.validarDisponibilidade(plugPag)
     }
 
     private fun abrirTelaEstorno() {
@@ -93,9 +89,12 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
     private fun configurarEventos() {
         plugPag.setEventListener(object : PlugPagEventListener {
             override fun onEvent(data: PlugPagEventData) {
-                Log.i("PlugPag", "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}")
+                Log.i(
+                    "PlugPag",
+                    "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}"
+                )
 
-                if (!data.customMessage.isNullOrBlank())
+                if (data.customMessage.isNotBlank())
                     EstadoEstorno.atualizarMensagem(data.customMessage)
             }
         })
