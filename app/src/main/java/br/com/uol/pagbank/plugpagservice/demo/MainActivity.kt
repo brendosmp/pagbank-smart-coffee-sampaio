@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -12,10 +13,18 @@ import androidx.appcompat.app.AppCompatActivity
 import br.com.uol.pagbank.plugpagservice.demo.databinding.ActivityMainBinding
 import br.com.uol.pagbank.plugpagservice.demo.terminal.IdentificadorTerminal
 import br.com.uol.pagbank.plugpagservice.demo.ui.terminal.InformacoesTerminalActivity
+import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
+import org.koin.android.ext.android.inject
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityMainBinding
+    private val plugPag: PlugPag by inject()
+
     private var animacaoLogo: AnimatorSet? = null
+    private var verificandoPlugPag = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,15 +32,98 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        configurarTerminal()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (::binding.isInitialized)
+            verificarStatusPlugPag()
+    }
+
+    private fun configurarTerminal() {
         val terminalId = IdentificadorTerminal.obterOuCriar(this)
 
         mostrarTelaPadrao()
 
         if (IdentificadorTerminal.deveMostrarPrimeiroAcesso(this, terminalId)) {
             abrirInformacoesTerminal()
-
             IdentificadorTerminal.marcarComoExibido(this, terminalId)
         }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun mostrarTelaPadrao() {
+        binding.layoutPrimeiroAcesso.visibility = View.GONE
+        binding.layoutPadrao.visibility = View.VISIBLE
+        binding.cardAvisoTerminal.visibility = View.GONE
+
+        iniciarAnimacaoLogo()
+    }
+
+    private fun verificarStatusPlugPag() {
+        if (verificandoPlugPag)
+            return
+
+        verificandoPlugPag = true
+
+        Thread {
+            var respondeu = false
+            var autenticado = false
+            var ocupado = false
+
+            val executor = Executors.newSingleThreadExecutor()
+
+            try {
+                val future = executor.submit {
+                    autenticado = plugPag.isAuthenticated()
+                    ocupado = plugPag.isServiceBusy()
+                    respondeu = true
+                }
+
+                try {
+                    future.get(10, TimeUnit.SECONDS)
+                } catch (e: Exception) {
+                    future.cancel(true)
+                    Log.e("MainActivity", "Timeout ao consultar PlugPag", e)
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Erro ao consultar PlugPag", e)
+            } finally {
+                executor.shutdownNow()
+            }
+
+            runOnUiThread {
+                verificandoPlugPag = false
+
+                when {
+                    !respondeu -> mostrarAvisoTerminal("Serviço PagBank indisponível.")
+
+                    !autenticado -> mostrarAvisoTerminal(
+                        "Moderninha não ativada. Ative o terminal PagBank para utilizar pagamentos e estornos."
+                    )
+
+                    ocupado -> mostrarAvisoTerminal(
+                        "Moderninha ocupada no momento. Aguarde a operação atual finalizar."
+                    )
+
+                    else -> esconderAvisoTerminal()
+                }
+            }
+        }.start()
+    }
+
+    private fun mostrarAvisoTerminal(mensagem: String) {
+        binding.cardAvisoTerminal.visibility = View.VISIBLE
+        binding.txtAvisoTerminal.text = mensagem
+        pararAnimacaoLogo()
+    }
+
+    private fun esconderAvisoTerminal() {
+        binding.cardAvisoTerminal.visibility = View.GONE
+        binding.txtAvisoTerminal.text = ""
+        iniciarAnimacaoLogo()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -52,16 +144,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun abrirInformacoesTerminal() {
         val intent = Intent(this, InformacoesTerminalActivity::class.java)
-
         startActivity(intent)
-    }
-
-    @SuppressLint("SetTextI18n")
-    private fun mostrarTelaPadrao() {
-        binding.layoutPrimeiroAcesso.visibility = View.GONE
-        binding.layoutPadrao.visibility = View.VISIBLE
-
-        iniciarAnimacaoLogo()
     }
 
     private fun iniciarAnimacaoLogo() {
@@ -86,7 +169,6 @@ class MainActivity : AppCompatActivity() {
 
         animacaoLogo = AnimatorSet().apply {
             playTogether(escalaX, escalaY, transparencia)
-
             start()
         }
     }
@@ -94,6 +176,12 @@ class MainActivity : AppCompatActivity() {
     private fun pararAnimacaoLogo() {
         animacaoLogo?.cancel()
         animacaoLogo = null
+
+        if (::binding.isInitialized) {
+            binding.imgLogoSampaio.scaleX = 1f
+            binding.imgLogoSampaio.scaleY = 1f
+            binding.imgLogoSampaio.alpha = 1f
+        }
     }
 
     override fun onDestroy() {

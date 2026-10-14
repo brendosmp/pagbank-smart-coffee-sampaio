@@ -9,6 +9,7 @@
     android:padding="24dp"
     tools:ignore="HardcodedText">
 
+    <!-- PRIMEIRO ACESSO -->
     <LinearLayout
         android:id="@+id/layoutPrimeiroAcesso"
         android:layout_width="0dp"
@@ -93,6 +94,7 @@
 
     </LinearLayout>
 
+    <!-- TELA PADRÃO -->
     <LinearLayout
         android:id="@+id/layoutPadrao"
         android:layout_width="0dp"
@@ -109,8 +111,7 @@
             android:layout_width="190dp"
             android:layout_height="190dp"
             android:clipChildren="false"
-            android:clipToPadding="false"
-            tools:ignore="UselessParent">
+            android:clipToPadding="false">
 
             <ImageView
                 android:id="@+id/imgLogoSampaio"
@@ -122,6 +123,55 @@
                 android:src="@drawable/sampaio_logo" />
 
         </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="SAMPAIO Si"
+            android:textColor="@color/cinza_titulo"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardAvisoTerminal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="#FFF4E5"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeColor="#F2B84B"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="⚠"
+                    android:textSize="26sp" />
+
+                <TextView
+                    android:id="@+id/txtAvisoTerminal"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:textColor="#7A4B00"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
