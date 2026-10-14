@@ -23,7 +23,7 @@ class ServidorDescobertaTerminal(context: Context) {
 
         Thread {
             try {
-                val terminalId = IdentificadorTerminal.obterOuCriar(contexto)
+                val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(contexto)
 
                 socket = DatagramSocket(null).apply {
                     reuseAddress = true

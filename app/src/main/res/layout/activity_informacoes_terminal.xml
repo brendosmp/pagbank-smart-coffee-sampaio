@@ -22,17 +22,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Configuração do terminal"
+            android:text="Configuração do PDV"
             android:textColor="@color/cinza_titulo"
             android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="Este é o código de identificação desta maquininha."
+            android:text="Utilize os dados abaixo para vincular esta maquininha ao PDV."
             android:textColor="@color/cinza_texto"
             android:textSize="15sp" />
 
@@ -70,8 +70,37 @@
                     android:gravity="center"
                     android:letterSpacing="0.08"
                     android:textColor="@color/azul_topbar"
-                    android:textSize="30sp"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    tools:text="A1B2C3D4E5F6" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="28dp"
+                    android:layout_marginBottom="28dp"
+                    android:background="#E8ECEA" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.08"
+                    android:text="TERMINAL KEY"
+                    android:textColor="@color/cinza_texto"
+                    android:textSize="12sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txtTerminalKey"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:letterSpacing="0.08"
+                    android:textColor="@color/azul_topbar"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    tools:text="8F21A9C47B3D6E12" />
 
             </LinearLayout>
 
@@ -82,16 +111,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:gravity="center"
-            android:text="Cadastre este código no PDV"
+            android:text="Cadastre o ID e a Key no PDV."
             android:textColor="@color/cinza_texto"
             android:textSize="15sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnContinuar"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_width="220dp"
+            android:layout_height="52dp"
             android:layout_marginTop="32dp"
             android:text="Continuar"
+            android:textAllCaps="false"
             android:textSize="16sp"
             app:cornerRadius="14dp" />
 

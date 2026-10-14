@@ -15,8 +15,19 @@ class InformacoesTerminalActivity : AppCompatActivity() {
         binding = ActivityInformacoesTerminalBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.txtTerminalId.text = IdentificadorTerminal.obterOuCriar(this)
+        carregarInformacoes()
+        configurarEventos()
+    }
 
+    private fun carregarInformacoes() {
+        val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(this)
+        val terminalKey = IdentificadorTerminal.obterOuCriarTerminalKey(this)
+
+        binding.txtTerminalId.text = terminalId
+        binding.txtTerminalKey.text = terminalKey
+    }
+
+    private fun configurarEventos() {
         binding.btnContinuar.setOnClickListener {
             finish()
         }

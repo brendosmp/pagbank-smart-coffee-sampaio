@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun configurarTerminal() {
-        val terminalId = IdentificadorTerminal.obterOuCriar(this)
+        val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(this)
 
         mostrarTelaPadrao()
 

@@ -6,11 +6,14 @@ import br.com.uol.pagbank.plugpagservice.demo.estorno.RequisicaoEstorno
 import br.com.uol.pagbank.plugpagservice.demo.estorno.ServicoEstorno
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.RequisicaoPagamento
 import br.com.uol.pagbank.plugpagservice.demo.pagamento.ServicoPagamento
+import br.com.uol.pagbank.plugpagservice.demo.terminal.SegurancaTerminal
+import br.com.uol.pagbank.plugpagservice.demo.terminal.TerminalNaoAutorizadoException
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
 import com.google.gson.Gson
 import fi.iki.elonen.NanoHTTPD
 
 class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0.0.0", PORTA) {
+    private val contexto = context.applicationContext
 
     companion object {
         private const val PORTA = 9090
@@ -24,20 +27,31 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
 
     override fun serve(session: IHTTPSession): Response {
         return try {
+            SegurancaTerminal.validar(contexto, session.headers)
+
             when {
-                session.method == Method.POST && session.uri == "/pagamentos" ->
-                    receberPagamento(session)
+                session.method == Method.POST && session.uri == "/pagamentos" -> receberPagamento(
+                    session
+                )
 
-                session.method == Method.POST && session.uri == "/estornos" ->
-                    receberEstorno(session)
+                session.method == Method.POST && session.uri == "/estornos" -> receberEstorno(
+                    session
+                )
 
-                else ->
-                    respostaErro(
-                        Response.Status.NOT_FOUND,
-                        "ROTA_NAO_ENCONTRADA",
-                        "O recurso solicitado não foi encontrado."
-                    )
+                else -> respostaErro(
+                    Response.Status.NOT_FOUND,
+                    "ROTA_NAO_ENCONTRADA",
+                    "O recurso solicitado não foi encontrado."
+                )
             }
+        } catch (e: TerminalNaoAutorizadoException) {
+            Log.e("ServidorHttp", "Terminal não autorizado", e)
+
+            respostaErro(
+                Response.Status.UNAUTHORIZED,
+                "TERMINAL_NAO_AUTORIZADO",
+                e.message ?: "Terminal não autorizado."
+            )
         } catch (e: IllegalArgumentException) {
             Log.e("ServidorHttp", "Requisição inválida", e)
 
