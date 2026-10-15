@@ -5,6 +5,9 @@ import android.util.Log
 import br.com.sampaiosi.softwareultimate.estorno.RequisicaoEstorno
 import br.com.sampaiosi.softwareultimate.estorno.ServicoEstorno
 import br.com.sampaiosi.softwareultimate.pagamento.ServicoPagamento
+import br.com.sampaiosi.softwareultimate.terminal.HashTerminal
+import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
+import br.com.sampaiosi.softwareultimate.terminal.InformacoesConexaoTerminal
 import br.com.sampaiosi.softwareultimate.terminal.SegurancaTerminal
 import br.com.sampaiosi.softwareultimate.terminal.TerminalNaoAutorizadoException
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
@@ -48,6 +51,9 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
                 session.method == Method.POST && session.uri == "/estornos" -> receberEstorno(
                     session
                 )
+
+                session.method == Method.GET && session.uri == "/terminal" ->
+                    obterInformacoesTerminal()
 
                 else -> respostaErro(
                     Response.Status.NOT_FOUND,
@@ -156,6 +162,18 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
         }
 
         Log.i("ServidorHttp", "Estorno finalizado. TransactionId=${requisicao.transactionId}")
+
+        return respostaOk(gson.toJson(resposta))
+    }
+
+    private fun obterInformacoesTerminal(): Response {
+        val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(contexto)
+        val terminalKey = IdentificadorTerminal.obterOuCriarTerminalKey(contexto)
+
+        val resposta = InformacoesConexaoTerminal(
+            terminalId = terminalId,
+            terminalKeyHash = HashTerminal.gerar(terminalKey)
+        )
 
         return respostaOk(gson.toJson(resposta))
     }
