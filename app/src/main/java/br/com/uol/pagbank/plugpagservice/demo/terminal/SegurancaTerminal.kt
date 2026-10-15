@@ -15,12 +15,23 @@ object SegurancaTerminal {
         val terminalKeyRecebida = headers[HEADER_TERMINAL_KEY]
 
         if (terminalIdRecebido.isNullOrBlank())
-            throw TerminalNaoAutorizadoException("Terminal ID não informado.")
+            throw TerminalNaoAutorizadoException(
+                "A requisição do PDV não informou o Terminal ID."
+            )
 
         if (terminalKeyRecebida.isNullOrBlank())
-            throw TerminalNaoAutorizadoException("Terminal Key não informada.")
+            throw TerminalNaoAutorizadoException(
+                "A requisição do PDV não informou a Terminal Key."
+            )
 
-        if (terminalIdRecebido != terminalIdEsperado || terminalKeyRecebida != terminalKeyEsperada)
-            throw TerminalNaoAutorizadoException("Credenciais do terminal inválidas.")
+        if (terminalIdRecebido != terminalIdEsperado)
+            throw TerminalNaoAutorizadoException(
+                "O Terminal ID informado pelo PDV não corresponde a esta Moderninha."
+            )
+
+        if (terminalKeyRecebida != terminalKeyEsperada)
+            throw TerminalNaoAutorizadoException(
+                "A Terminal Key informada pelo PDV não corresponde a esta Moderninha."
+            )
     }
 }
