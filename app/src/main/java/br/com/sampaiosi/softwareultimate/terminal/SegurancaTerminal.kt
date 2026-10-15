@@ -12,6 +12,7 @@ object SegurancaTerminal {
             IdentificadorTerminal.obterOuCriarTerminalId(
                 context
             )
+
         val terminalKeyEsperada =
             IdentificadorTerminal.obterOuCriarTerminalKey(
                 context

@@ -3,6 +3,7 @@ package br.com.sampaiosi.softwareultimate
 import android.app.Application
 import br.com.sampaiosi.softwareultimate.comunicacao.ServidorDescobertaTerminal
 import br.com.sampaiosi.softwareultimate.comunicacao.ServidorHttpPagamento
+import br.com.sampaiosi.softwareultimate.di.plugpagModule
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -16,7 +17,7 @@ class PayApplication : Application() {
 
         val koinApplication = startKoin {
             androidContext(this@PayApplication)
-            modules(_root_ide_package_.br.com.sampaiosi.softwareultimate.di.plugpagModule)
+            modules(plugpagModule)
         }
 
         val plugPag = koinApplication.koin.get<PlugPag>()

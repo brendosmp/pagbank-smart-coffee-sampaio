@@ -20,7 +20,7 @@ object IdentificadorTerminal {
         if (!existente.isNullOrBlank())
             return existente
 
-        val terminalId = gerarCodigo(4)
+        val terminalId = gerarCodigo(8)
 
         preferencias.edit {
             putString(CHAVE_TERMINAL_ID, terminalId)

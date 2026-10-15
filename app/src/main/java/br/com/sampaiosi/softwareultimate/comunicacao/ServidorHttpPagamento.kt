@@ -38,22 +38,19 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
 
     override fun serve(session: IHTTPSession): Response {
         return try {
-            SegurancaTerminal.validar(
-                contexto,
-                session.headers
-            )
-
             when {
-                session.method == Method.POST && session.uri == "/pagamentos" -> receberPagamento(
-                    session
-                )
-
-                session.method == Method.POST && session.uri == "/estornos" -> receberEstorno(
-                    session
-                )
-
                 session.method == Method.GET && session.uri == "/terminal" ->
                     obterInformacoesTerminal()
+
+                session.method == Method.POST && session.uri == "/pagamentos" -> {
+                    SegurancaTerminal.validar(contexto, session.headers)
+                    receberPagamento(session)
+                }
+
+                session.method == Method.POST && session.uri == "/estornos" -> {
+                    SegurancaTerminal.validar(contexto, session.headers)
+                    receberEstorno(session)
+                }
 
                 else -> respostaErro(
                     Response.Status.NOT_FOUND,
