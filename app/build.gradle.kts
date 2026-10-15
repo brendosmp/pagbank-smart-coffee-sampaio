@@ -4,14 +4,17 @@ plugins {
 }
 
 android {
-    namespace = "br.com.uol.pagbank.plugpagservice.demo"
+    namespace = "br.com.sampaiosi.softwareultimate"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "br.com.uol.pagbank.plugpagservice.demo"
+        applicationId = "br.com.sampaiosi.softwareultimate"
+
         minSdk = 23
-        //noinspection OldTargetApi
-        targetSdk = 34
+
+        //noinspection ExpiredTargetSdkVersion,OldTargetApi
+        targetSdk = 23
+
         versionCode = 1
         versionName = "1.29.0"
 
