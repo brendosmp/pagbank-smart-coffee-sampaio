@@ -5,6 +5,7 @@ import android.util.Log
 import br.com.sampaiosi.softwareultimate.estorno.RequisicaoEstorno
 import br.com.sampaiosi.softwareultimate.estorno.ServicoEstorno
 import br.com.sampaiosi.softwareultimate.pagamento.ServicoPagamento
+import br.com.sampaiosi.softwareultimate.seguranca.ConfiguracaoHttps
 import br.com.sampaiosi.softwareultimate.terminal.HashTerminal
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
 import br.com.sampaiosi.softwareultimate.terminal.InformacoesConexaoTerminal
@@ -17,6 +18,7 @@ import pagamento.RequisicaoPagamento
 
 class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0.0.0", PORTA) {
     private val contexto = context.applicationContext
+    private val PREFIXO_TERMINAL = "SMP_"
 
     companion object {
         private const val PORTA = 9090
@@ -195,7 +197,16 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
     }
 
     fun iniciarServidor() {
+        makeSecure(
+            ConfiguracaoHttps.criarServerSocketFactory(),
+            arrayOf("TLSv1.2")
+        )
+
         start(SOCKET_READ_TIMEOUT, false)
-        Log.i("ServidorHttp", "Servidor HTTP iniciado na porta $PORTA")
+
+        Log.i(
+            "ServidorHttp",
+            "Servidor HTTPS iniciado na porta $PORTA"
+        )
     }
 }

@@ -8,15 +8,13 @@ object SegurancaTerminal {
     private const val HEADER_TERMINAL_KEY = "x-terminal-key"
 
     fun validar(context: Context, headers: Map<String, String>) {
-        val terminalIdEsperado =
-            IdentificadorTerminal.obterOuCriarTerminalId(
-                context
-            )
+        val terminalIdEsperado = IdentificadorTerminal.obterOuCriarTerminalId(
+            context
+        )
 
-        val terminalKeyEsperada =
-            IdentificadorTerminal.obterOuCriarTerminalKey(
-                context
-            )
+        val terminalKeyEsperada = IdentificadorTerminal.obterOuCriarTerminalKey(
+            context
+        )
 
         val terminalIdRecebido = headers[HEADER_TERMINAL_ID]
         val terminalKeyRecebida = headers[HEADER_TERMINAL_KEY]
