@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import br.com.sampaiosi.softwareultimate.databinding.ActivityMainBinding
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
 import br.com.sampaiosi.softwareultimate.ui.terminal.InformacoesTerminalActivity
@@ -24,15 +25,16 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
 
     private var animacaoLogo: AnimatorSet? = null
     private var verificandoPlugPag = false
+    private var cancelandoOperacao = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding =
-            ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         configurarTerminal()
+        configurarEventos()
     }
 
     override fun onResume() {
@@ -43,23 +45,19 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
     }
 
     private fun configurarTerminal() {
-        val terminalId =
-            IdentificadorTerminal.obterOuCriarTerminalId(
-                this
-            )
+        val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(this)
 
         mostrarTelaPadrao()
 
-        if (IdentificadorTerminal.deveMostrarPrimeiroAcesso(
-                this,
-                terminalId
-            )
-        ) {
+        if (IdentificadorTerminal.deveMostrarPrimeiroAcesso(this, terminalId)) {
             abrirInformacoesTerminal()
-            IdentificadorTerminal.marcarComoExibido(
-                this,
-                terminalId
-            )
+            IdentificadorTerminal.marcarComoExibido(this, terminalId)
+        }
+    }
+
+    private fun configurarEventos() {
+        binding.btnCancelarOperacao.setOnClickListener {
+            cancelarOperacaoAtual()
         }
     }
 
@@ -68,12 +66,13 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
         binding.layoutPrimeiroAcesso.visibility = View.GONE
         binding.layoutPadrao.visibility = View.VISIBLE
         binding.cardAvisoTerminal.visibility = View.GONE
+        binding.btnCancelarOperacao.visibility = View.GONE
 
         iniciarAnimacaoLogo()
     }
 
     private fun verificarStatusPlugPag() {
-        if (verificandoPlugPag)
+        if (verificandoPlugPag || cancelandoOperacao)
             return
 
         verificandoPlugPag = true
@@ -96,10 +95,10 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
                     future.get(10, TimeUnit.SECONDS)
                 } catch (e: Exception) {
                     future.cancel(true)
-                    Log.e("MainActivity", "Timeout ao consultar PlugPag", e)
+                    Log.e(TAG, "Timeout ao consultar PlugPag", e)
                 }
             } catch (e: Exception) {
-                Log.e("MainActivity", "Erro ao consultar PlugPag", e)
+                Log.e(TAG, "Erro ao consultar PlugPag", e)
             } finally {
                 executor.shutdownNow()
             }
@@ -108,31 +107,92 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
                 verificandoPlugPag = false
 
                 when {
-                    !respondeu -> mostrarAvisoTerminal("Serviço PagBank indisponível.")
+                    !respondeu -> {
+                        mostrarAvisoTerminal("Serviço PagBank indisponível.", false)
+                    }
 
-                    !autenticado -> mostrarAvisoTerminal(
-                        "Moderninha não ativada. Ative o terminal PagBank para utilizar pagamentos e estornos."
-                    )
+                    !autenticado -> {
+                        mostrarAvisoTerminal(
+                            "Moderninha não ativada. Ative o terminal PagBank para utilizar pagamentos e estornos.",
+                            false
+                        )
+                    }
 
-                    ocupado -> mostrarAvisoTerminal(
-                        "Moderninha ocupada no momento. Aguarde a operação atual finalizar."
-                    )
+                    ocupado -> {
+                        mostrarAvisoTerminal(
+                            "Moderninha ocupada no momento. Aguarde a operação atual finalizar.",
+                            true
+                        )
+                    }
 
-                    else -> esconderAvisoTerminal()
+                    else -> {
+                        esconderAvisoTerminal()
+                    }
                 }
             }
         }.start()
     }
 
-    private fun mostrarAvisoTerminal(mensagem: String) {
+    private fun cancelarOperacaoAtual() {
+        if (cancelandoOperacao)
+            return
+
+        cancelandoOperacao = true
+
+        binding.btnCancelarOperacao.isEnabled = false
+        binding.btnCancelarOperacao.text = "CANCELANDO..."
+
+        Thread {
+            try {
+                plugPag.abort()
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Cancelamento solicitado à Moderninha.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                Thread.sleep(1500)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao cancelar operação PlugPag", e)
+
+                runOnUiThread {
+                    Toast.makeText(
+                        this,
+                        "Não foi possível cancelar a operação.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } finally {
+                runOnUiThread {
+                    cancelandoOperacao = false
+
+                    binding.btnCancelarOperacao.isEnabled = true
+                    binding.btnCancelarOperacao.text = "CANCELAR OPERAÇÃO"
+
+                    verificarStatusPlugPag()
+                }
+            }
+        }.start()
+    }
+
+    private fun mostrarAvisoTerminal(mensagem: String, permitirCancelamento: Boolean) {
         binding.cardAvisoTerminal.visibility = View.VISIBLE
         binding.txtAvisoTerminal.text = mensagem
+
+        binding.btnCancelarOperacao.visibility =
+            if (permitirCancelamento) View.VISIBLE else View.GONE
+
         pararAnimacaoLogo()
     }
 
     private fun esconderAvisoTerminal() {
         binding.cardAvisoTerminal.visibility = View.GONE
         binding.txtAvisoTerminal.text = ""
+        binding.btnCancelarOperacao.visibility = View.GONE
+
         iniciarAnimacaoLogo()
     }
 
@@ -157,6 +217,7 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
             this,
             InformacoesTerminalActivity::class.java
         )
+
         startActivity(intent)
     }
 
@@ -200,5 +261,9 @@ class MainActivity : androidx.appcompat.app.AppCompatActivity() {
     override fun onDestroy() {
         pararAnimacaoLogo()
         super.onDestroy()
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }
