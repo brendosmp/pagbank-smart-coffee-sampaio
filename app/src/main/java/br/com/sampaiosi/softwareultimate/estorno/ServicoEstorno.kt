@@ -12,24 +12,32 @@ import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventData
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagEventListener
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagVoidData
 
-class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
+class ServicoEstorno(
+    context: Context,
+    private val plugPag: PlugPag
+) {
 
-    private val context = context.applicationContext
+    companion object {
+        private const val TAG = "PlugPag"
+    }
+
+    private val contexto = context.applicationContext
 
     fun executar(requisicao: RequisicaoEstorno): RespostaEstorno {
         validar(requisicao)
 
-        EstadoEstorno.iniciar(
-            requisicao
-        )
+        EstadoEstorno.iniciar(requisicao)
+
         abrirTelaEstorno()
         configurarEventos()
 
         val voidType = when (requisicao.tipo) {
             TipoEstorno.CREDITO,
-            TipoEstorno.DEBITO -> PlugPag.VOID_PAYMENT
+            TipoEstorno.DEBITO ->
+                PlugPag.VOID_PAYMENT
 
-            TipoEstorno.PIX -> PlugPag.VOID_QRCODE
+            TipoEstorno.PIX ->
+                PlugPag.VOID_QRCODE
         }
 
         val dadosEstorno = PlugPagVoidData(
@@ -40,44 +48,66 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
         )
 
         Log.i(
-            "PlugPag",
-            "Estorno: transactionCode=${requisicao.transactionCode}, transactionId=${requisicao.transactionId}, tipo=${requisicao.tipo}"
+            TAG,
+            "Iniciando estorno. TransactionCode=${requisicao.transactionCode} TransactionId=${requisicao.transactionId} Tipo=${requisicao.tipo}"
         )
 
-        val resultado = plugPag.voidPayment(dadosEstorno)
+        try {
+            val resultado =
+                plugPag.voidPayment(dadosEstorno)
 
-        Log.i(
-            "PlugPag",
-            "Estorno finalizado. Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
-        )
-
-        when (resultado.result) {
-            PlugPag.OPERATION_ABORTED ->
-                EstadoEstorno.cancelar()
-
-            PlugPag.RET_OK ->
-                EstadoEstorno.finalizar(
-                    true,
-                    "Estorno realizado com sucesso"
-                )
-
-            else -> EstadoEstorno.finalizar(
-                false,
-                resultado.message ?: "Não foi possível realizar o estorno"
+            Log.i(
+                TAG,
+                "Estorno finalizado. Resultado=${resultado.result} Erro=${resultado.errorCode} Mensagem=${resultado.message}"
             )
-        }
 
-        return RespostaEstorno(
-            resultado
-        )
+            when (resultado.result) {
+                PlugPag.OPERATION_ABORTED ->
+                    EstadoEstorno.cancelar()
+
+                PlugPag.RET_OK ->
+                    EstadoEstorno.finalizar(
+                        true,
+                        "Estorno realizado com sucesso"
+                    )
+
+                else ->
+                    EstadoEstorno.finalizar(
+                        false,
+                        resultado.message
+                            ?: "Não foi possível realizar o estorno"
+                    )
+            }
+
+            return RespostaEstorno(
+                resultado
+            )
+        } catch (e: Exception) {
+            Log.e(
+                TAG,
+                "Erro inesperado durante estorno. TransactionId=${requisicao.transactionId}",
+                e
+            )
+
+            EstadoEstorno.finalizar(
+                false,
+                "Erro ao processar estorno"
+            )
+
+            throw e
+        }
     }
 
-    private fun validar(requisicao: RequisicaoEstorno) {
-        if (requisicao.transactionCode.isBlank())
-            throw IllegalArgumentException("TransactionCode não informado.")
+    private fun validar(
+        requisicao: RequisicaoEstorno
+    ) {
+        require(requisicao.transactionCode.isNotBlank()) {
+            "TransactionCode não informado."
+        }
 
-        if (requisicao.transactionId.isBlank())
-            throw IllegalArgumentException("TransactionId não informado.")
+        require(requisicao.transactionId.isNotBlank()) {
+            "TransactionId não informado."
+        }
 
         ValidadorPlugPag.validarDisponibilidade(
             plugPag
@@ -87,30 +117,36 @@ class ServicoEstorno(context: Context, private val plugPag: PlugPag) {
     private fun abrirTelaEstorno() {
         Handler(Looper.getMainLooper()).post {
             val intent = Intent(
-                context,
+                contexto,
                 EstornoActivity::class.java
             ).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
             }
 
-            context.startActivity(intent)
+            contexto.startActivity(intent)
         }
     }
 
     private fun configurarEventos() {
-        plugPag.setEventListener(object : PlugPagEventListener {
-            override fun onEvent(data: PlugPagEventData) {
-                Log.i(
-                    "PlugPag",
-                    "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}"
-                )
+        plugPag.setEventListener(
+            object : PlugPagEventListener {
 
-                if (data.customMessage.isNotBlank())
-                    EstadoEstorno.atualizarMensagem(
-                        data.customMessage
+                override fun onEvent(data: PlugPagEventData) {
+                    Log.i(
+                        TAG,
+                        "EventoEstorno=${data.eventCode} Mensagem=${data.customMessage}"
                     )
+
+                    if (data.customMessage.isNotBlank()) {
+                        EstadoEstorno.atualizarMensagem(
+                            data.customMessage
+                        )
+                    }
+                }
             }
-        })
+        )
     }
 }

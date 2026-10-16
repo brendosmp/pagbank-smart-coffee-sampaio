@@ -5,10 +5,11 @@ import android.util.Log
 import br.com.sampaiosi.softwareultimate.estorno.RequisicaoEstorno
 import br.com.sampaiosi.softwareultimate.estorno.ServicoEstorno
 import br.com.sampaiosi.softwareultimate.pagamento.ServicoPagamento
+import br.com.sampaiosi.softwareultimate.seguranca.AssinaturaTerminal
 import br.com.sampaiosi.softwareultimate.seguranca.ConfiguracaoHttps
-import br.com.sampaiosi.softwareultimate.terminal.HashTerminal
+import br.com.sampaiosi.softwareultimate.seguranca.FingerprintCertificado
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
-import br.com.sampaiosi.softwareultimate.terminal.InformacoesConexaoTerminal
+import br.com.sampaiosi.softwareultimate.terminal.RespostaTerminal
 import br.com.sampaiosi.softwareultimate.terminal.SegurancaTerminal
 import br.com.sampaiosi.softwareultimate.terminal.TerminalNaoAutorizadoException
 import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPag
@@ -16,51 +17,60 @@ import com.google.gson.Gson
 import fi.iki.elonen.NanoHTTPD
 import pagamento.RequisicaoPagamento
 
-class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0.0.0", PORTA) {
-    private val contexto = context.applicationContext
+class ServidorHttpPagamento(
+    context: Context,
+    plugPag: PlugPag
+) : NanoHTTPD("0.0.0.0", PORTA) {
 
     companion object {
+        private const val TAG = "ServidorHttp"
         private const val PORTA = 9090
         private const val MIME_JSON = "application/json; charset=utf-8"
     }
 
+    private val contexto = context.applicationContext
     private val gson = Gson()
-    private val servicoPagamento =
-        ServicoPagamento(
-            context.applicationContext,
-            plugPag
-        )
-    private val servicoEstorno =
-        ServicoEstorno(
-            context.applicationContext,
-            plugPag
-        )
+
+    private val servicoPagamento = ServicoPagamento(
+        contexto,
+        plugPag
+    )
+
+    private val servicoEstorno = ServicoEstorno(
+        contexto,
+        plugPag
+    )
+
     private val bloqueioPlugPag = Any()
 
     override fun serve(session: IHTTPSession): Response {
         return try {
             when {
-                session.method == Method.GET && session.uri == "/terminal" ->
-                    obterInformacoesTerminal()
+                session.method == Method.GET &&
+                        session.uri == "/terminal" ->
+                    processarTerminal(session)
 
-                session.method == Method.POST && session.uri == "/pagamentos" -> {
-                    SegurancaTerminal.validar(contexto, session.headers)
+                session.method == Method.POST &&
+                        session.uri == "/pagamentos" -> {
+                    validarTerminal(session)
                     receberPagamento(session)
                 }
 
-                session.method == Method.POST && session.uri == "/estornos" -> {
-                    SegurancaTerminal.validar(contexto, session.headers)
+                session.method == Method.POST &&
+                        session.uri == "/estornos" -> {
+                    validarTerminal(session)
                     receberEstorno(session)
                 }
 
-                else -> respostaErro(
-                    Response.Status.NOT_FOUND,
-                    "ROTA_NAO_ENCONTRADA",
-                    "O recurso solicitado não foi encontrado."
-                )
+                else ->
+                    respostaErro(
+                        Response.Status.NOT_FOUND,
+                        "ROTA_NAO_ENCONTRADA",
+                        "Rota não encontrada."
+                    )
             }
         } catch (e: TerminalNaoAutorizadoException) {
-            Log.e("ServidorHttp", "Terminal não autorizado", e)
+            Log.e(TAG, "Terminal não autorizado", e)
 
             respostaErro(
                 Response.Status.UNAUTHORIZED,
@@ -68,7 +78,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
                 e.message ?: "Terminal não autorizado."
             )
         } catch (e: IllegalArgumentException) {
-            Log.e("ServidorHttp", "Requisição inválida", e)
+            Log.e(TAG, "Requisição inválida", e)
 
             respostaErro(
                 Response.Status.BAD_REQUEST,
@@ -76,7 +86,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
                 e.message ?: "Os dados enviados são inválidos."
             )
         } catch (e: TerminalNaoAutenticadoException) {
-            Log.e("ServidorHttp", "Terminal não autenticado", e)
+            Log.e(TAG, "Terminal não autenticado", e)
 
             respostaErro(
                 Response.Status.SERVICE_UNAVAILABLE,
@@ -84,7 +94,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
                 e.message ?: "A Moderninha não está ativada."
             )
         } catch (e: TerminalOcupadoException) {
-            Log.e("ServidorHttp", "Terminal ocupado", e)
+            Log.e(TAG, "Terminal ocupado", e)
 
             respostaErro(
                 Response.Status.CONFLICT,
@@ -92,7 +102,7 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
                 e.message ?: "A Moderninha está ocupada."
             )
         } catch (e: Exception) {
-            Log.e("ServidorHttp", "Erro inesperado", e)
+            Log.e(TAG, "Erro inesperado", e)
 
             respostaErro(
                 Response.Status.INTERNAL_ERROR,
@@ -102,111 +112,252 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
         }
     }
 
-    private fun receberPagamento(session: IHTTPSession): Response {
-        val json = obterCorpo(session) ?: return respostaErro(
-            Response.Status.BAD_REQUEST,
-            "CORPO_NAO_INFORMADO",
-            "O corpo da requisição de pagamento não foi informado."
-        )
+    private fun processarTerminal(
+        session: IHTTPSession
+    ): Response {
+        Log.i(TAG, "Recebida requisição GET /terminal")
 
-        val requisicao = try {
-            gson.fromJson(
-                json,
-                RequisicaoPagamento::class.java
-            )
-        } catch (_: Exception) {
+        val nonce =
+            session.parameters["nonce"]?.firstOrNull()
+
+        if (nonce.isNullOrBlank()) {
+            Log.w(TAG, "Nonce não informado")
+
             return respostaErro(
                 Response.Status.BAD_REQUEST,
-                "JSON_PAGAMENTO_INVALIDO",
-                "Os dados enviados para o pagamento estão em formato inválido."
+                "NONCE_NAO_INFORMADO",
+                "Nonce obrigatório."
             )
         }
 
-        Log.i("ServidorHttp", "Pagamento recebido. PedidoId=${requisicao.pedidoId}")
+        val terminalId =
+            IdentificadorTerminal
+                .obterOuCriarTerminalId(contexto)
 
-        val resposta = synchronized(bloqueioPlugPag) {
-            servicoPagamento.executar(requisicao)
-        }
+        val terminalKey =
+            SegurancaTerminal
+                .obterTerminalKey(contexto)
 
-        Log.i("ServidorHttp", "Pagamento finalizado. PedidoId=${requisicao.pedidoId}")
+        val fingerprint =
+            FingerprintCertificado
+                .obterSha256(contexto)
 
-        return respostaOk(gson.toJson(resposta))
-    }
+        val assinatura =
+            AssinaturaTerminal.gerar(
+                terminalKey,
+                terminalId,
+                nonce,
+                fingerprint
+            )
 
-    private fun receberEstorno(session: IHTTPSession): Response {
-        val json = obterCorpo(session) ?: return respostaErro(
-            Response.Status.BAD_REQUEST,
-            "CORPO_NAO_INFORMADO",
-            "O corpo da requisição de estorno não foi informado."
+        val resposta =
+            RespostaTerminal(
+                terminalId = terminalId,
+                certificadoFingerprint = fingerprint,
+                assinatura = assinatura
+            )
+
+        val json =
+            gson.toJson(resposta)
+
+        Log.i(
+            TAG,
+            "Resposta /terminal gerada. TerminalId=$terminalId"
         )
 
-        val requisicao = try {
-            gson.fromJson(
-                json,
-                RequisicaoEstorno::class.java
-            )
-        } catch (_: Exception) {
-            return respostaErro(
-                Response.Status.BAD_REQUEST,
-                "JSON_ESTORNO_INVALIDO",
-                "Os dados enviados para o estorno estão em formato inválido."
-            )
-        }
-
-        Log.i("ServidorHttp", "Estorno recebido. TransactionId=${requisicao.transactionId}")
-
-        val resposta = synchronized(bloqueioPlugPag) {
-            servicoEstorno.executar(requisicao)
-        }
-
-        Log.i("ServidorHttp", "Estorno finalizado. TransactionId=${requisicao.transactionId}")
-
-        return respostaOk(gson.toJson(resposta))
+        return respostaOk(json)
     }
 
-    private fun obterInformacoesTerminal(): Response {
-        val terminalId = IdentificadorTerminal.obterOuCriarTerminalId(contexto)
-        val terminalKey = IdentificadorTerminal.obterOuCriarTerminalKey(contexto)
+    private fun validarTerminal(
+        session: IHTTPSession
+    ) {
+        Log.i(TAG, "Validando credenciais do PDV")
 
-        val resposta = InformacoesConexaoTerminal(
-            terminalId = terminalId,
-            terminalKeyHash = HashTerminal.gerar(terminalKey)
+        SegurancaTerminal.validar(
+            contexto,
+            session.headers
         )
 
-        return respostaOk(gson.toJson(resposta))
+        val terminalId =
+            session.headers["x-terminal-id"]
+
+        Log.i(
+            TAG,
+            "Terminal autorizado. TerminalId=$terminalId"
+        )
+    }
+
+    private fun receberPagamento(
+        session: IHTTPSession
+    ): Response {
+        Log.i(TAG, "Recebida requisição POST /pagamentos")
+
+        val json =
+            obterCorpo(session)
+                ?: return respostaErro(
+                    Response.Status.BAD_REQUEST,
+                    "CORPO_NAO_INFORMADO",
+                    "O corpo da requisição de pagamento não foi informado."
+                )
+
+        val requisicao =
+            try {
+                gson.fromJson(
+                    json,
+                    RequisicaoPagamento::class.java
+                )
+            } catch (e: Exception) {
+                Log.w(
+                    TAG,
+                    "JSON de pagamento inválido",
+                    e
+                )
+
+                return respostaErro(
+                    Response.Status.BAD_REQUEST,
+                    "JSON_PAGAMENTO_INVALIDO",
+                    "Os dados enviados para o pagamento estão em formato inválido."
+                )
+            }
+
+        Log.i(
+            TAG,
+            "Pagamento recebido. PedidoId=${requisicao.pedidoId}"
+        )
+
+        val resposta =
+            synchronized(bloqueioPlugPag) {
+                servicoPagamento.executar(requisicao)
+            }
+
+        Log.i(
+            TAG,
+            "Pagamento finalizado. PedidoId=${requisicao.pedidoId}"
+        )
+
+        return respostaOk(
+            gson.toJson(resposta)
+        )
+    }
+
+    private fun receberEstorno(
+        session: IHTTPSession
+    ): Response {
+        Log.i(TAG, "Recebida requisição POST /estornos")
+
+        val json =
+            obterCorpo(session)
+                ?: return respostaErro(
+                    Response.Status.BAD_REQUEST,
+                    "CORPO_NAO_INFORMADO",
+                    "O corpo da requisição de estorno não foi informado."
+                )
+
+        val requisicao =
+            try {
+                gson.fromJson(
+                    json,
+                    RequisicaoEstorno::class.java
+                )
+            } catch (e: Exception) {
+                Log.w(
+                    TAG,
+                    "JSON de estorno inválido",
+                    e
+                )
+
+                return respostaErro(
+                    Response.Status.BAD_REQUEST,
+                    "JSON_ESTORNO_INVALIDO",
+                    "Os dados enviados para o estorno estão em formato inválido."
+                )
+            }
+
+        Log.i(
+            TAG,
+            "Estorno recebido. TransactionId=${requisicao.transactionId}"
+        )
+
+        val resposta =
+            synchronized(bloqueioPlugPag) {
+                servicoEstorno.executar(requisicao)
+            }
+
+        Log.i(
+            TAG,
+            "Estorno finalizado. TransactionId=${requisicao.transactionId}"
+        )
+
+        return respostaOk(
+            gson.toJson(resposta)
+        )
     }
 
     private fun obterCorpo(session: IHTTPSession): String? {
-        val arquivos = HashMap<String, String>()
+        val arquivos =
+            HashMap<String, String>()
+
         session.parseBody(arquivos)
 
-        return arquivos["postData"]?.takeIf { it.isNotBlank() }
+        return arquivos["postData"]
+            ?.takeIf {
+                it.isNotBlank()
+            }
     }
 
-    private fun respostaOk(json: String): Response {
-        return newFixedLengthResponse(Response.Status.OK, MIME_JSON, json)
-    }
-
-    private fun respostaErro(status: Response.Status, codigo: String, mensagem: String): Response {
-        val erro = RespostaErro(
-            codigo,
-            mensagem
+    private fun respostaOk(
+        json: String
+    ): Response {
+        return newFixedLengthResponse(
+            Response.Status.OK,
+            MIME_JSON,
+            json
         )
-        return newFixedLengthResponse(status, MIME_JSON, gson.toJson(erro))
+    }
+
+    private fun respostaErro(
+        status: Response.Status,
+        codigo: String,
+        mensagem: String
+    ): Response {
+        val erro =
+            RespostaErro(
+                codigo,
+                mensagem
+            )
+
+        return newFixedLengthResponse(
+            status,
+            MIME_JSON,
+            gson.toJson(erro)
+        )
     }
 
     fun iniciarServidor() {
-        Log.i("ServidorHttp", "Configurando servidor HTTPS...")
+        Log.i(
+            TAG,
+            "Configurando servidor HTTPS..."
+        )
 
         makeSecure(
-            ConfiguracaoHttps.criarServerSocketFactory(contexto),
+            ConfiguracaoHttps
+                .criarServerSocketFactory(contexto),
             arrayOf("TLSv1.2")
         )
 
-        Log.i("ServidorHttp", "Configuração HTTPS concluída")
+        Log.i(
+            TAG,
+            "Configuração HTTPS concluída"
+        )
 
-        start(SOCKET_READ_TIMEOUT, false)
+        start(
+            SOCKET_READ_TIMEOUT,
+            false
+        )
 
-        Log.i("ServidorHttp", "Servidor HTTPS iniciado na porta $PORTA")
+        Log.i(
+            TAG,
+            "Servidor HTTPS iniciado na porta $PORTA"
+        )
     }
 }

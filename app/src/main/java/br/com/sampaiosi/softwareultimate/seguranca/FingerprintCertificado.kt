@@ -9,30 +9,17 @@ object FingerprintCertificado {
     private const val TAG = "FingerprintCertificado"
 
     fun obterSha256(context: Context): String {
-        try {
-            Log.i(TAG, "Calculando fingerprint SHA-256")
+        val certificado = CertificadoHttps.obterCertificado(context)
 
-            val certificado =
-                CertificadoHttps.obterCertificado(context)
+        val hash = MessageDigest.getInstance("SHA-256")
+            .digest(certificado.encoded)
 
-            val hash =
-                MessageDigest
-                    .getInstance("SHA-256")
-                    .digest(certificado.encoded)
+        val fingerprint = hash.joinToString("") { "%02X".format(it) }
 
-            val fingerprint =
-                hash.joinToString("") {
-                    "%02X".format(it)
-                }
+        Log.i(TAG, "Subject certificado local: ${certificado.subjectX500Principal}")
+        Log.i(TAG, "Serial certificado local: ${certificado.serialNumber}")
+        Log.i(TAG, "Fingerprint LOCAL: $fingerprint")
 
-            Log.i(TAG, "Fingerprint SHA-256 calculado")
-            Log.i(TAG, "Fingerprint: $fingerprint")
-
-            return fingerprint
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Erro ao calcular fingerprint", e)
-            throw e
-        }
+        return fingerprint
     }
 }
