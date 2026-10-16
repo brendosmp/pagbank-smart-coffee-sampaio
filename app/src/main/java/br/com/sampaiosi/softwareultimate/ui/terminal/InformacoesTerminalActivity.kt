@@ -3,6 +3,7 @@ package br.com.sampaiosi.softwareultimate.ui.terminal
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import br.com.sampaiosi.softwareultimate.databinding.ActivityInformacoesTerminalBinding
+import br.com.sampaiosi.softwareultimate.terminal.IdentificadorInternoTerminal
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
 
 class InformacoesTerminalActivity : AppCompatActivity() {
@@ -20,17 +21,12 @@ class InformacoesTerminalActivity : AppCompatActivity() {
     }
 
     private fun carregarInformacoes() {
-        val terminalId =
-            IdentificadorTerminal.obterOuCriarTerminalId(
-                this
-            )
-        val terminalKey =
-            IdentificadorTerminal.obterOuCriarTerminalKey(
-                this
-            )
-
-        binding.txtTerminalId.text = terminalId
-        binding.txtTerminalKey.text = terminalKey
+        binding.txtTerminalId.text = IdentificadorInternoTerminal.removerPrefixo(
+            IdentificadorTerminal.obterOuCriarTerminalId(this)
+        )
+        binding.txtTerminalKey.text = IdentificadorInternoTerminal.removerPrefixo(
+            IdentificadorTerminal.obterOuCriarTerminalKey(this)
+        )
     }
 
     private fun configurarEventos() {
