@@ -1,10 +1,12 @@
 package br.com.sampaiosi.softwareultimate.ui.terminal
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import br.com.sampaiosi.softwareultimate.databinding.ActivityInformacoesTerminalBinding
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorInternoTerminal
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
+import br.com.sampaiosi.softwareultimate.terminal.RedeLocal
 
 class InformacoesTerminalActivity : AppCompatActivity() {
 
@@ -20,13 +22,23 @@ class InformacoesTerminalActivity : AppCompatActivity() {
         configurarEventos()
     }
 
+    @SuppressLint("SetTextI18n")
     private fun carregarInformacoes() {
-        binding.txtTerminalId.text = IdentificadorInternoTerminal.removerPrefixo(
+        val terminalId = IdentificadorInternoTerminal.removerPrefixo(
             IdentificadorTerminal.obterOuCriarTerminalId(this)
         )
-        binding.txtTerminalKey.text = IdentificadorInternoTerminal.removerPrefixo(
+
+        val terminalKey = IdentificadorInternoTerminal.removerPrefixo(
             IdentificadorTerminal.obterOuCriarTerminalKey(this)
         )
+
+        val ipLocal = RedeLocal.obterIpLocal(this)
+
+        binding.txtTerminalId.text = terminalId
+        binding.txtTerminalKey.text = terminalKey
+        binding.txtIpLocal.text = ipLocal ?: "Não conectado"
+
+        binding.txtPorta.text = "9090"
     }
 
     private fun configurarEventos() {
