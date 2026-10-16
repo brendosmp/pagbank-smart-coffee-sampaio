@@ -5,6 +5,7 @@ import android.util.Log
 import br.com.sampaiosi.softwareultimate.estorno.RequisicaoEstorno
 import br.com.sampaiosi.softwareultimate.estorno.ServicoEstorno
 import br.com.sampaiosi.softwareultimate.pagamento.ServicoPagamento
+import br.com.sampaiosi.softwareultimate.seguranca.ConfiguracaoHttps
 import br.com.sampaiosi.softwareultimate.terminal.HashTerminal
 import br.com.sampaiosi.softwareultimate.terminal.IdentificadorTerminal
 import br.com.sampaiosi.softwareultimate.terminal.InformacoesConexaoTerminal
@@ -195,7 +196,17 @@ class ServidorHttpPagamento(context: Context, plugPag: PlugPag) : NanoHTTPD("0.0
     }
 
     fun iniciarServidor() {
+        Log.i("ServidorHttp", "Configurando servidor HTTPS...")
+
+        makeSecure(
+            ConfiguracaoHttps.criarServerSocketFactory(contexto),
+            arrayOf("TLSv1.2")
+        )
+
+        Log.i("ServidorHttp", "Configuração HTTPS concluída")
+
         start(SOCKET_READ_TIMEOUT, false)
-        Log.i("ServidorHttp", "Servidor HTTP iniciado na porta $PORTA")
+
+        Log.i("ServidorHttp", "Servidor HTTPS iniciado na porta $PORTA")
     }
 }
